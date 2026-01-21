@@ -2,6 +2,33 @@
 
 A lightweight TCP socket networking library for C# with built-in message framing and packet serialization.
 
+## Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+    - [Server Setup](#server-setup)
+    - [Client Setup](#client-setup)
+    - [Creating Custom Packets](#creating-custom-packets)
+    - [Sending Packets](#sending-packets)
+- [Architecture](#architecture)
+    - [Message Framing](#message-framing)
+    - [Packet System](#packet-system)
+    - [Supported Data Types](#supported-data-types)
+- [Advanced Usage](#advanced-usage)
+    - [Custom Serializable Types](#custom-serializable-types)
+    - [Server Events](#server-events)
+    - [Connection Management](#connection-management)
+- [Configuration](#configuration)
+- [Best Practices](#best-practices)
+- [Thread Safety](#thread-safety)
+- [Requirements](#requirements)
+- [Examples](#examples)
+- [Contributing](#contributing)
+- [License](#license)
+- [Author](#author)
+- [Acknowledgments](#acknowledgments)
+
 ## Features
 
 - Length-prefixed message framing over TCP to handle packet boundaries
@@ -239,11 +266,11 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the [MIT](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Author
 
-James Mills - 2026
+James Mills - 2026 - [@JamesMillsDev](https://github.com/JamesMillsDev)
 
 ## Acknowledgments
 
