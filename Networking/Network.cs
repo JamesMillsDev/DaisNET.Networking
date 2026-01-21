@@ -20,15 +20,13 @@ namespace DaisNET.Networking
 		/// Initializes and runs the network loop based on command-line arguments.
 		/// Creates either a server or client instance and continuously polls for network events.
 		/// </summary>
-		/// <param name="args">Command-line arguments. First argument should be "server" or anything else for client.
-		/// For client mode, second argument should be the server endpoint address.</param>
 		/// <param name="app">The application instance used to check when to stop the network loop.</param>
-		public static async Task RunNetworkLoop(string[] args, NetworkApplicationBase app)
+		/// <param name="ip">The IP that the network should connect to.</param>
+		public static async Task RunNetworkLoop(NetworkApplicationBase app, string ip = "")
 		{
 			try
 			{
-				bool isServer = args[0] == "server";
-				await InitializeAndPoll(isServer, !isServer ? args[1] : "", app);
+				await InitializeAndPoll(app, ip);
 			}
 			catch (Exception e)
 			{
@@ -52,7 +50,7 @@ namespace DaisNET.Networking
 			{
 				return new Tuple<string, byte[]>("NULL", []);
 			}
-			
+
 			// Stage 1: Read the 4-byte length prefix
 			// This tells us how many bytes to expect in the packet body
 			byte[] lengthBuffer = new byte[sizeof(int)];
@@ -152,7 +150,7 @@ namespace DaisNET.Networking
 		/// <param name="port">The port number to connect to. Defaults to 25565.</param>
 		private static void CreateClient(string endpoint, int port = 25565) =>
 			Instance = new NetworkClient(endpoint, port);
-		
+
 		/// <summary>
 		/// Parses a packet buffer to extract the packet ID and payload data.
 		/// Expected buffer format: [idLength (4 bytes)][id (variable)][payload (remaining)]
@@ -201,17 +199,16 @@ namespace DaisNET.Networking
 				memoryStream.ReadExactly(payload);
 			}
 		}
-		
+
 		/// <summary>
 		/// Internal method that initializes the network (server or client) and runs the polling loop.
 		/// Continues polling until the application signals it is closing.
 		/// </summary>
-		/// <param name="isServer">True to create a server instance, false to create a client instance.</param>
-		/// <param name="endpoint">The server endpoint address (only used for client mode).</param>
 		/// <param name="app">The application instance to monitor for shutdown.</param>
-		private static async Task InitializeAndPoll(bool isServer, string endpoint, NetworkApplicationBase app)
+		/// <param name="endpoint">The server endpoint address (only used for client mode).</param>
+		private static async Task InitializeAndPoll(NetworkApplicationBase app, string endpoint)
 		{
-			if (isServer)
+			if (app.IsServer)
 			{
 				CreateServer();
 			}
@@ -226,7 +223,7 @@ namespace DaisNET.Networking
 			}
 
 			Instance.Open();
-			
+
 			try
 			{
 				// Continue polling until the application signals it's closing
@@ -250,7 +247,7 @@ namespace DaisNET.Networking
 				Console.WriteLine(e);
 			}
 		}
-		
+
 		/// <summary>
 		/// Gets whether this network instance has authority (true for server, false for client).
 		/// The authoritative instance is responsible for game state and validation.
@@ -312,7 +309,7 @@ namespace DaisNET.Networking
 			{
 				return;
 			}
-			
+
 			SendPacket(packet, this.socket);
 		}
 
@@ -367,7 +364,7 @@ namespace DaisNET.Networking
 				packet = null;
 				return false;
 			}
-			
+
 			// Attempt to get the packet type from the registered packets dictionary
 			if (!this.registeredPackets.TryGetValue(id, out Type? type))
 			{

@@ -52,33 +52,13 @@ git submodule add https://github.com/JamesMillsDev/DaisNET.Networking.git
 ### Server Setup
 
 ```csharp
-using DaisNET.Networking;
-
-// Create and start a server
-Network.CreateServer();
-Network.Instance.Open();
-
-// Register packet types
-Network.Instance.RegisterPacket("player_move", typeof(PlayerMovePacket));
-
-// Run the network loop (typically in a background task)
-await Network.RunNetworkLoop(args, yourApplication);
+TODO
 ```
 
 ### Client Setup
 
 ```csharp
-using DaisNET.Networking;
-
-// Create and connect to a server
-Network.CreateClient("localhost");
-Network.Instance.Open();
-
-// Register the same packet types as the server
-Network.Instance.RegisterPacket("player_move", typeof(PlayerMovePacket));
-
-// Run the network loop
-await Network.RunNetworkLoop(args, yourApplication);
+TODO
 ```
 
 ### Creating Custom Packets
@@ -189,45 +169,6 @@ public class PlayerData : IPacketSerializable
         return sizeof(int) + Encoding.UTF8.GetByteCount(Name) + sizeof(int);
     }
 }
-```
-
-### Server Events
-
-```csharp
-if (Network.Instance is NetworkServer server)
-{
-    server.OnClientConnected += (clientId) =>
-    {
-        Console.WriteLine($"Client {clientId} connected");
-    };
-}
-```
-
-### Connection Management
-
-```csharp
-// Check connection status
-if (Network.Instance is NetworkClient client)
-{
-    if (client.Connected)
-    {
-        // Send data
-    }
-}
-
-// Gracefully close connection
-Network.Instance.Close();
-```
-
-## Configuration
-
-### Poll Rate
-
-Adjust how frequently the network polls for incoming data:
-
-```csharp
-// Default is 20ms
-Network.CreateServer("localhost", port: 25565, pollRate: 16); // ~60Hz
 ```
 
 ### Connection Timeout

@@ -2,9 +2,10 @@
 
 namespace DaisNET.Networking
 {
-	public abstract class NetworkApplicationBase
+	public abstract class NetworkApplicationBase(bool isServer)
 	{
 		public bool IsClosing { get; private set; }
+		public bool IsServer { get; } = isServer;
 
 		public async Task Run()
 		{
