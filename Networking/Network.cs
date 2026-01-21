@@ -269,9 +269,9 @@ namespace DaisNET.Networking.Networking
 		protected readonly IPAddress ipAddr;
 
 		/// <summary>
-		/// The local endpoint combining the IP address and port number.
+		/// The target endpoint combining the IP address and port number.
 		/// </summary>
-		protected readonly IPEndPoint localEndPoint;
+		protected readonly IPEndPoint targetEndPoint;
 
 		/// <summary>
 		/// The rate (in milliseconds) at which the <see cref="Poll"/> function will run.
@@ -295,7 +295,7 @@ namespace DaisNET.Networking.Networking
 		{
 			IPHostEntry ipHost = Dns.GetHostEntry(hostName);
 			this.ipAddr = ipHost.AddressList[0];
-			this.localEndPoint = new IPEndPoint(this.ipAddr, port);
+			this.targetEndPoint = new IPEndPoint(this.ipAddr, port);
 
 			this.socket = null;
 			this.pollRate = pollRate;
@@ -336,8 +336,7 @@ namespace DaisNET.Networking.Networking
 		/// For servers: binds to the local endpoint and starts listening.
 		/// For clients: creates the socket and initiates connection to the server.
 		/// </summary>
-		/// <param name="backlog">The maximum length of the pending connections queue (server only). Defaults to 10.</param>
-		protected abstract void Open(int backlog = 10);
+		protected abstract void Open();
 
 		/// <summary>
 		/// Gracefully shuts down and closes the socket connection.
