@@ -1,8 +1,8 @@
 ﻿using System.Net.Sockets;
-using DaisNET.Networking.Networking.Packets;
-using DaisNET.Networking.Utility;
+using DaisNET.Networking.Packets;
+using DaisNET.Utility;
 
-namespace DaisNET.Networking.Networking
+namespace DaisNET.Networking
 {
 	public delegate void ClientConnectionDelegate(byte id);
 

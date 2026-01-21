@@ -1,4 +1,4 @@
-﻿namespace DaisNET.Networking.Utility
+﻿namespace DaisNET.Utility
 {
 	public static class Tasks
 	{

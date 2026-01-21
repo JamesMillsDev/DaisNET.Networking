@@ -1,9 +1,8 @@
-﻿using DaisNET.Networking.Networking;
-using DaisNET.Networking.Utility;
+﻿using DaisNET.Utility;
 
 namespace DaisNET.Networking
 {
-	public abstract class ApplicationBase
+	public abstract class NetworkApplicationBase
 	{
 		public bool IsClosing { get; private set; }
 

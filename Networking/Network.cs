@@ -1,9 +1,9 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using DaisNET.Networking.Networking.Packets;
+using DaisNET.Networking.Packets;
 
-namespace DaisNET.Networking.Networking
+namespace DaisNET.Networking
 {
 	/// <summary>
 	/// Abstract base class for network implementations (server and client).
@@ -23,7 +23,7 @@ namespace DaisNET.Networking.Networking
 		/// <param name="args">Command-line arguments. First argument should be "server" or anything else for client.
 		/// For client mode, second argument should be the server endpoint address.</param>
 		/// <param name="app">The application instance used to check when to stop the network loop.</param>
-		public static async Task RunNetworkLoop(string[] args, ApplicationBase app)
+		public static async Task RunNetworkLoop(string[] args, NetworkApplicationBase app)
 		{
 			try
 			{
@@ -209,7 +209,7 @@ namespace DaisNET.Networking.Networking
 		/// <param name="isServer">True to create a server instance, false to create a client instance.</param>
 		/// <param name="endpoint">The server endpoint address (only used for client mode).</param>
 		/// <param name="app">The application instance to monitor for shutdown.</param>
-		private static async Task InitializeAndPoll(bool isServer, string endpoint, ApplicationBase app)
+		private static async Task InitializeAndPoll(bool isServer, string endpoint, NetworkApplicationBase app)
 		{
 			if (isServer)
 			{

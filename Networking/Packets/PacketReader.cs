@@ -1,121 +1,199 @@
 ﻿using System.Text;
-using DaisNET.Networking.Utility.Extensions;
+using DaisNET.Utility.Extensions;
 
-namespace DaisNET.Networking.Networking.Packets
+namespace DaisNET.Networking.Packets
 {
-	public class PacketReader(byte[] buffer)
-	{
-		private readonly MemoryStream stream = new(buffer);
+    /// <summary>
+    /// Provides methods for reading serialized data from a byte buffer.
+    /// Used to deserialize packet payloads received over the network.
+    /// All read operations check if the stream is readable before attempting to read.
+    /// </summary>
+    public class PacketReader(byte[] buffer)
+    {
+       private readonly MemoryStream stream = new(buffer);
 
-		public bool ReadBoolean()
-		{
-			return this.stream.CanRead
-				? BitConverter.ToBoolean(ReadBytes(sizeof(bool)))
-				: throw new Exception("Stream is not readable");
-		}
+       /// <summary>
+       /// Reads a boolean value from the stream.
+       /// </summary>
+       /// <returns>The deserialized boolean value.</returns>
+       /// <exception cref="Exception">Thrown when the stream is not readable.</exception>
+       public bool ReadBoolean()
+       {
+          return this.stream.CanRead
+             ? BitConverter.ToBoolean(ReadBytes(sizeof(bool)))
+             : throw new Exception("Stream is not readable");
+       }
 
-		public char ReadChar()
-		{
-			return this.stream.CanRead
-				? BitConverter.ToChar(ReadBytes(sizeof(char)))
-				: throw new Exception("Stream is not readable");
-		}
+       /// <summary>
+       /// Reads a character from the stream.
+       /// </summary>
+       /// <returns>The deserialized character.</returns>
+       /// <exception cref="Exception">Thrown when the stream is not readable.</exception>
+       public char ReadChar()
+       {
+          return this.stream.CanRead
+             ? BitConverter.ToChar(ReadBytes(sizeof(char)))
+             : throw new Exception("Stream is not readable");
+       }
 
-		public short ReadInt16()
-		{
-			return this.stream.CanRead
-				? BitConverter.ToInt16(ReadBytes(sizeof(short)))
-				: throw new Exception("Stream is not readable");
-		}
+       /// <summary>
+       /// Reads a 16-bit signed integer from the stream.
+       /// </summary>
+       /// <returns>The deserialized short value.</returns>
+       /// <exception cref="Exception">Thrown when the stream is not readable.</exception>
+       public short ReadInt16()
+       {
+          return this.stream.CanRead
+             ? BitConverter.ToInt16(ReadBytes(sizeof(short)))
+             : throw new Exception("Stream is not readable");
+       }
 
-		public int ReadInt32()
-		{
-			return this.stream.CanRead
-				? BitConverter.ToInt32(ReadBytes(sizeof(int)))
-				: throw new Exception("Stream is not readable");
-		}
+       /// <summary>
+       /// Reads a 32-bit signed integer from the stream.
+       /// </summary>
+       /// <returns>The deserialized int value.</returns>
+       /// <exception cref="Exception">Thrown when the stream is not readable.</exception>
+       public int ReadInt32()
+       {
+          return this.stream.CanRead
+             ? BitConverter.ToInt32(ReadBytes(sizeof(int)))
+             : throw new Exception("Stream is not readable");
+       }
 
-		public long ReadInt64()
-		{
-			return this.stream.CanRead
-				? BitConverter.ToInt64(ReadBytes(sizeof(long)))
-				: throw new Exception("Stream is not readable");
-		}
+       /// <summary>
+       /// Reads a 64-bit signed integer from the stream.
+       /// </summary>
+       /// <returns>The deserialized long value.</returns>
+       /// <exception cref="Exception">Thrown when the stream is not readable.</exception>
+       public long ReadInt64()
+       {
+          return this.stream.CanRead
+             ? BitConverter.ToInt64(ReadBytes(sizeof(long)))
+             : throw new Exception("Stream is not readable");
+       }
 
-		public float ReadFloat()
-		{
-			return this.stream.CanRead
-				? BitConverter.ToSingle(ReadBytes(sizeof(float)))
-				: throw new Exception("Stream is not readable");
-		}
+       /// <summary>
+       /// Reads a single-precision floating point number from the stream.
+       /// </summary>
+       /// <returns>The deserialized float value.</returns>
+       /// <exception cref="Exception">Thrown when the stream is not readable.</exception>
+       public float ReadFloat()
+       {
+          return this.stream.CanRead
+             ? BitConverter.ToSingle(ReadBytes(sizeof(float)))
+             : throw new Exception("Stream is not readable");
+       }
 
-		public double ReadDouble()
-		{
-			return this.stream.CanRead
-				? BitConverter.ToDouble(ReadBytes(sizeof(double)))
-				: throw new Exception("Stream is not readable");
-		}
+       /// <summary>
+       /// Reads a double-precision floating point number from the stream.
+       /// </summary>
+       /// <returns>The deserialized double value.</returns>
+       /// <exception cref="Exception">Thrown when the stream is not readable.</exception>
+       public double ReadDouble()
+       {
+          return this.stream.CanRead
+             ? BitConverter.ToDouble(ReadBytes(sizeof(double)))
+             : throw new Exception("Stream is not readable");
+       }
 
-		public byte ReadByte()
-		{
-			return this.stream.CanRead
-				? ReadBytes(sizeof(byte))[0]
-				: throw new Exception("Stream is not readable");
-		}
+       /// <summary>
+       /// Reads a single byte from the stream.
+       /// </summary>
+       /// <returns>The deserialized byte value.</returns>
+       /// <exception cref="Exception">Thrown when the stream is not readable.</exception>
+       public byte ReadByte()
+       {
+          return this.stream.CanRead
+             ? ReadBytes(sizeof(byte))[0]
+             : throw new Exception("Stream is not readable");
+       }
 
-		public ushort ReadUInt16()
-		{
-			return this.stream.CanRead
-				? BitConverter.ToUInt16(ReadBytes(sizeof(ushort)))
-				: throw new Exception("Stream is not readable");
-		}
+       /// <summary>
+       /// Reads a 16-bit unsigned integer from the stream.
+       /// </summary>
+       /// <returns>The deserialized ushort value.</returns>
+       /// <exception cref="Exception">Thrown when the stream is not readable.</exception>
+       public ushort ReadUInt16()
+       {
+          return this.stream.CanRead
+             ? BitConverter.ToUInt16(ReadBytes(sizeof(ushort)))
+             : throw new Exception("Stream is not readable");
+       }
 
-		public uint ReadUInt32()
-		{
-			return this.stream.CanRead
-				? BitConverter.ToUInt32(ReadBytes(sizeof(uint)))
-				: throw new Exception("Stream is not readable");
-		}
+       /// <summary>
+       /// Reads a 32-bit unsigned integer from the stream.
+       /// </summary>
+       /// <returns>The deserialized uint value.</returns>
+       /// <exception cref="Exception">Thrown when the stream is not readable.</exception>
+       public uint ReadUInt32()
+       {
+          return this.stream.CanRead
+             ? BitConverter.ToUInt32(ReadBytes(sizeof(uint)))
+             : throw new Exception("Stream is not readable");
+       }
 
-		public ulong ReadULong()
-		{
-			return this.stream.CanRead
-				? BitConverter.ToUInt64(ReadBytes(sizeof(ulong)))
-				: throw new Exception("Stream is not readable");
-		}
+       /// <summary>
+       /// Reads a 64-bit unsigned integer from the stream.
+       /// </summary>
+       /// <returns>The deserialized ulong value.</returns>
+       /// <exception cref="Exception">Thrown when the stream is not readable.</exception>
+       public ulong ReadULong()
+       {
+          return this.stream.CanRead
+             ? BitConverter.ToUInt64(ReadBytes(sizeof(ulong)))
+             : throw new Exception("Stream is not readable");
+       }
 
-		public string ReadString()
-		{
-			if (!this.stream.CanRead)
-			{
-				throw new Exception("Stream is not readable");
-			}
-			
-			int length = ReadInt32();
-			
-			if (length < 0)
-			{
-				throw new Exception("Invalid string length");
-			}
-			
-			return length == 0 
-				? string.Empty 
-				: Encoding.UTF8.GetString(ReadBytes(length));
-		}
+       /// <summary>
+       /// Reads a UTF-8 encoded string from the stream.
+       /// Strings are serialized with a 4-byte length prefix followed by the UTF-8 bytes.
+       /// </summary>
+       /// <returns>The deserialized string, or an empty string if length is 0.</returns>
+       /// <exception cref="Exception">Thrown when the stream is not readable or the string length is negative.</exception>
+       public string ReadString()
+       {
+          if (!this.stream.CanRead)
+          {
+             throw new Exception("Stream is not readable");
+          }
+          
+          int length = ReadInt32();
+          
+          if (length < 0)
+          {
+             throw new Exception("Invalid string length");
+          }
+          
+          return length == 0 
+             ? string.Empty 
+             : Encoding.UTF8.GetString(ReadBytes(length));
+       }
 
-		public T ReadPacketSerializable<T>() where T : IPacketSerializable, new()
-		{
-			if (!this.stream.CanRead)
-			{
-				throw new Exception("Stream is not readable");
-			}
-			
-			T packetSerializable = new();
-			packetSerializable.Deserialize(ReadBytes(packetSerializable.GetSize()));
+       /// <summary>
+       /// Reads and deserializes a custom packet-serializable object from the stream.
+       /// The object must implement <see cref="IPacketSerializable"/> and have a parameterless constructor.
+       /// </summary>
+       /// <typeparam name="T">The type of object to deserialize, must implement <see cref="IPacketSerializable"/>.</typeparam>
+       /// <returns>The deserialized object instance.</returns>
+       /// <exception cref="Exception">Thrown when the stream is not readable.</exception>
+       public T ReadPacketSerializable<T>() where T : IPacketSerializable, new()
+       {
+          if (!this.stream.CanRead)
+          {
+             throw new Exception("Stream is not readable");
+          }
+          
+          T packetSerializable = new();
+          packetSerializable.Deserialize(ReadBytes(packetSerializable.GetSize()));
 
-			return packetSerializable;
-		}
+          return packetSerializable;
+       }
 
-		private byte[] ReadBytes(int count) => this.stream.ReadBytes(count);
-	}
+       /// <summary>
+       /// Reads the specified number of bytes from the internal stream.
+       /// </summary>
+       /// <param name="count">The number of bytes to read.</param>
+       /// <returns>A byte array containing the read data.</returns>
+       private byte[] ReadBytes(int count) => this.stream.ReadBytes(count);
+    }
 }
