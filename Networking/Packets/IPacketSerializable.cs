@@ -1,4 +1,4 @@
-﻿namespace Pong.Networking.Packets
+﻿namespace DaisNET.Networking.Networking.Packets
 {
 	public interface IPacketSerializable
 	{

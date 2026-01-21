@@ -1,8 +1,8 @@
 ﻿using System.Net.Sockets;
-using Pong.Networking.Packets;
-using Pong.Utility;
+using DaisNET.Networking.Networking.Packets;
+using DaisNET.Networking.Utility;
 
-namespace Pong.Networking
+namespace DaisNET.Networking.Networking
 {
 	public delegate void ClientConnectionDelegate(byte id);
 
@@ -38,9 +38,9 @@ namespace Pong.Networking
 
 		public void BroadcastPacket(Packet packet)
 		{
-			lock (connections)
+			lock (this.connections)
 			{
-				foreach (Socket connection in connections)
+				foreach (Socket connection in this.connections)
 				{
 					SendPacket(packet, connection);
 				}
@@ -120,7 +120,7 @@ namespace Pong.Networking
 					this.connections.Add(clientSocket.Result);
 				}
 				
-				OnClientConnected?.Invoke(id);
+				this.OnClientConnected?.Invoke(id);
 				Console.WriteLine("Client: {0} connected - Assigning id: {1}", clientSocket.Result.RemoteEndPoint, id);
 			}
 		}

@@ -1,8 +1,8 @@
 ﻿using System.Net.Sockets;
-using Pong.Networking.Packets;
-using Pong.Utility;
+using DaisNET.Networking.Networking.Packets;
+using DaisNET.Networking.Utility;
 
-namespace Pong.Networking
+namespace DaisNET.Networking.Networking
 {
 	public class NetworkClient(string endpoint, int port) : Network(endpoint, port)
 	{

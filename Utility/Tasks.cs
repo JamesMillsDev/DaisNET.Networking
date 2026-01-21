@@ -1,4 +1,4 @@
-﻿namespace Pong.Utility
+﻿namespace DaisNET.Networking.Utility
 {
 	public static class Tasks
 	{

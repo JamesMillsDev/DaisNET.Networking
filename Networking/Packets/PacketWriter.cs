@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace Pong.Networking.Packets
+namespace DaisNET.Networking.Networking.Packets
 {
 	public class PacketWriter : IDisposable, IAsyncDisposable
 	{

@@ -1,4 +1,4 @@
-﻿namespace Pong.Utility.Extensions
+﻿namespace DaisNET.Networking.Utility.Extensions
 {
 	public static class MemoryStreamExtensions
 	{

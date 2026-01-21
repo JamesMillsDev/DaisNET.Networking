@@ -1,9 +1,9 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using Pong.Networking.Packets;
+using DaisNET.Networking.Networking.Packets;
 
-namespace Pong.Networking
+namespace DaisNET.Networking.Networking
 {
 	/// <summary>
 	/// Abstract base class for network implementations (server and client).
@@ -295,7 +295,7 @@ namespace Pong.Networking
 		{
 			IPHostEntry ipHost = Dns.GetHostEntry(hostName);
 			this.ipAddr = ipHost.AddressList[0];
-			this.localEndPoint = new IPEndPoint(ipAddr, port);
+			this.localEndPoint = new IPEndPoint(this.ipAddr, port);
 
 			this.socket = null;
 			this.pollRate = pollRate;

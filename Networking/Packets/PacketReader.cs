@@ -1,7 +1,7 @@
 ﻿using System.Text;
-using Pong.Utility.Extensions;
+using DaisNET.Networking.Utility.Extensions;
 
-namespace Pong.Networking.Packets
+namespace DaisNET.Networking.Networking.Packets
 {
 	public class PacketReader(byte[] buffer)
 	{

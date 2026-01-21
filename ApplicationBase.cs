@@ -1,7 +1,7 @@
-﻿using Pong.Networking;
-using Pong.Utility;
+﻿using DaisNET.Networking.Networking;
+using DaisNET.Networking.Utility;
 
-namespace Pong
+namespace DaisNET.Networking
 {
 	public abstract class ApplicationBase
 	{
@@ -28,7 +28,7 @@ namespace Pong
 			}
 
 			Shutdown(Network.Instance);
-			IsClosing = true;
+			this.IsClosing = true;
 		}
 		
 		protected abstract void RegisterPackets(Network network);
