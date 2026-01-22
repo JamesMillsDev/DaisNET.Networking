@@ -1,4 +1,6 @@
-﻿namespace DaisNET.Networking.Packets
+﻿using DaisNET.Networking.Packets;
+
+namespace DaisNET.Networking.Serialization
 {
 	/// <summary>
 	/// Defines a contract for objects that can be serialized and deserialized for network transmission.
