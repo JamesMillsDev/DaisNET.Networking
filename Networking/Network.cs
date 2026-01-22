@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Data;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using DaisNET.Networking.Packets;
@@ -30,7 +31,7 @@ namespace DaisNET.Networking
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine(e);
+				Console.WriteLine($"Network - RunNetworkLoop():Exception caught: {e}");
 			}
 		}
 
@@ -223,6 +224,7 @@ namespace DaisNET.Networking
 			}
 
 			Instance.Open();
+			Instance.RegisterDefaultPackets();
 
 			try
 			{
@@ -235,7 +237,7 @@ namespace DaisNET.Networking
 					}
 					catch (Exception e)
 					{
-						Console.WriteLine(e);
+						Console.WriteLine($"Network - Initialise And Poll (Poll):Exception caught: {e}");
 						throw;
 					}
 				}
@@ -244,7 +246,7 @@ namespace DaisNET.Networking
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine(e);
+				Console.WriteLine($"Network - Initialise And Poll (Initialise):Exception caught: {e}");
 			}
 		}
 
@@ -253,6 +255,11 @@ namespace DaisNET.Networking
 		/// The authoritative instance is responsible for game state and validation.
 		/// </summary>
 		public bool HasAuthority { get; protected init; }
+
+		/// <summary>
+		/// The list of connected players which is automatically filled by <see cref="ConnectionPacket"/>.
+		/// </summary>
+		internal readonly List<NetworkPlayer> players = [];
 
 		/// <summary>
 		/// The underlying socket used for network communication.
@@ -318,8 +325,24 @@ namespace DaisNET.Networking
 		/// </summary>
 		/// <param name="id">The unique ID for the packet. Must match <see cref="Packet.ID"/>.</param>
 		/// <param name="type">The Type of the packet class.</param>
+		/// <exception cref="DuplicateNameException">Thrown if a packet is attempted to be registered with a name that already exists.</exception>
 		/// <returns>True if the packet was successfully registered, false if a packet with this ID already exists.</returns>
-		public bool RegisterPacket(string id, Type type) => this.registeredPackets.TryAdd(id, type);
+		public void RegisterPacket(string id, Type type)
+		{
+			if (this.registeredPackets.TryAdd(id, type))
+			{
+				return;
+			}
+			
+			throw new DuplicateNameException($"Duplicate packet id '{id}'");
+		}
+
+		/// <summary>
+		/// Tries to find a player held within <see cref="players"/> with a specific ID.
+		/// </summary>
+		/// <param name="id">The id of the player attempting to be found.</param>
+		/// <returns>A Player reference if found, null if id is not in use.</returns>
+		public NetworkPlayer? FindPlayer(byte id) => this.players.FirstOrDefault(player => player.ID == id);
 
 		/// <summary>
 		/// Polls the network for incoming data and processes packets.
@@ -376,6 +399,11 @@ namespace DaisNET.Networking
 			// Create and return the packet instance
 			packet = (Packet)Activator.CreateInstance(type)!;
 			return true;
+		}
+
+		private void RegisterDefaultPackets()
+		{
+			RegisterPacket(ConnectionPacket.ID_NAME, typeof(ConnectionPacket));
 		}
 	}
 }

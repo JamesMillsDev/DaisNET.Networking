@@ -14,12 +14,13 @@ namespace DaisNET.Networking
 		public event ClientConnectionDelegate? OnClientConnected;
 		public event ClientConnectionDelegate? OnClientDisconnected;
 
-		public int connectionBacklogCount = 10;
-
 		private readonly List<Socket> connections = [];
+
 		private bool isClosing;
+		private int connectionBacklogSize;
 
 		private readonly Queue<byte> returnedIds = [];
+		private readonly Queue<Tuple<Socket, byte>> queuedIds = [];
 
 		/// <summary>
 		/// Initializes a new network server instance and starts the connection acceptance loop.
@@ -27,10 +28,14 @@ namespace DaisNET.Networking
 		/// </summary>
 		/// <param name="host">The hostname or IP address to bind the server to.</param>
 		/// <param name="port">The port number to listen on. Defaults to 25565.</param>
-		public NetworkServer(string host, int port = 25565) : base(host, port)
+		/// <param name="backlog"></param>
+		public NetworkServer(string host, int port = 25565, int backlog = 10) : base(host, port)
 		{
 			// Server has authoritative control over game state
 			this.HasAuthority = true;
+
+			// Copy the connection backlog count
+			this.connectionBacklogSize = backlog;
 
 			// Start the connection acceptance loop in the background
 			_ = Task.Run(async () =>
@@ -41,7 +46,7 @@ namespace DaisNET.Networking
 				}
 				catch (Exception e)
 				{
-					Console.WriteLine(e);
+					Console.WriteLine($"NetworkServer - Connection Loop:Exception caught: {e}");
 				}
 			});
 		}
@@ -93,6 +98,43 @@ namespace DaisNET.Networking
 				await packet.Process();
 			}
 
+			// Copy the queue clearing the original.
+			Queue<Tuple<Socket, byte>> queued;
+			lock (this.queuedIds)
+			{
+				queued = new Queue<Tuple<Socket, byte>>(this.queuedIds);
+				this.queuedIds.Clear();
+			}
+
+			// Iterate over all queued items
+			while (queued.Count > 0)
+			{
+				(Socket connectedSocket, byte connectedId) = queued.Dequeue();
+
+				SendPacket(
+					new ConnectionPacket(true, connectedId, $"{connectedSocket.RemoteEndPoint}"),
+					connectedSocket
+				);
+
+				// Iterate over each connected client that isn't the queued one
+				foreach (Socket connection in connected)
+				{
+					byte connectionIndex = (byte)connected.IndexOf(connection);
+
+					// Send the connection packet for the new connection to the old ones
+					SendPacket(
+						new ConnectionPacket(false, connectedId, $"{connectedSocket.RemoteEndPoint}"),
+						connection
+					);
+
+					// Send the connection packet for the old connection to the new one
+					SendPacket(
+						new ConnectionPacket(false, connectionIndex, $"{connection.RemoteEndPoint}"),
+						connectedSocket
+					);
+				}
+			}
+
 			// Wait for the configured poll interval before checking for more packets
 			await Task.Delay(this.pollRate);
 		}
@@ -104,7 +146,7 @@ namespace DaisNET.Networking
 		{
 			this.socket = new Socket(this.ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 			this.socket.Bind(this.targetEndPoint);
-			this.socket.Listen(this.connectionBacklogCount);
+			this.socket.Listen(this.connectionBacklogSize);
 		}
 
 		/// <summary>
@@ -166,8 +208,7 @@ namespace DaisNET.Networking
 				}
 
 				// Notify listeners that a new client has connected
-				this.OnClientConnected?.Invoke(id);
-				Console.WriteLine("Client: {0} connected - Assigning id: {1}", clientSocket.Result.RemoteEndPoint, id);
+				this.queuedIds.Enqueue(new Tuple<Socket, byte>(clientSocket.Result, id));
 			}
 		}
 	}
