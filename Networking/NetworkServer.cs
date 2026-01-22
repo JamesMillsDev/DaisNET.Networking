@@ -1,26 +1,45 @@
-﻿using System.Net.Sockets;
+﻿using System.Net;
+using System.Net.Sockets;
 using DaisNET.Networking.Packets;
 using DaisNET.Utility;
+using DaisNET.Utility.Extensions;
 
 namespace DaisNET.Networking
 {
-	public delegate void ClientConnectionDelegate(byte id);
-
-	// TODO: Work out client's disconnecting
 	public class NetworkServer : Network
 	{
-		private static byte nextId;
+		/// <summary>
+		/// The next available ID to assign to a new client connection. Increments with each new connection.
+		/// </summary>
+		private static uint nextId;
 
-		public event ClientConnectionDelegate? OnClientConnected;
-		public event ClientConnectionDelegate? OnClientDisconnected;
+		/// <summary>
+		/// Flag indicating whether the server is in the process of shutting down.
+		/// Used to stop accepting new connections during graceful shutdown.
+		/// </summary>
+		private bool isClosing;
 
+		/// <summary>
+		/// The maximum number of pending connections that can be queued.
+		/// </summary>
+		private readonly int connectionBacklogSize;
+
+		/// <summary>
+		/// List of all currently connected client sockets.
+		/// Thread-safe access is enforced using locks.
+		/// </summary>
 		private readonly List<Socket> connections = [];
 
-		private bool isClosing;
-		private int connectionBacklogSize;
+		/// <summary>
+		/// Queue of IDs that have been returned (from disconnected clients) and can be reused.
+		/// </summary>
+		private readonly Queue<uint> returnedIds = [];
 
-		private readonly Queue<byte> returnedIds = [];
-		private readonly Queue<Tuple<Socket, byte>> queuedIds = [];
+		/// <summary>
+		/// Queue of sockets awaiting ID assignment paired with their assigned IDs.
+		/// Used to track pending client connections before they're fully initialized.
+		/// </summary>
+		private readonly Queue<Tuple<Socket, uint>> queuedIds = [];
 
 		/// <summary>
 		/// Initializes a new network server instance and starts the connection acceptance loop.
@@ -28,7 +47,7 @@ namespace DaisNET.Networking
 		/// </summary>
 		/// <param name="host">The hostname or IP address to bind the server to.</param>
 		/// <param name="port">The port number to listen on. Defaults to 25565.</param>
-		/// <param name="backlog"></param>
+		/// <param name="backlog">The amount of pending connections that can be listening for.</param>
 		public NetworkServer(string host, int port = 25565, int backlog = 10) : base(host, port)
 		{
 			// Server has authoritative control over game state
@@ -99,25 +118,36 @@ namespace DaisNET.Networking
 			}
 
 			// Copy the queue clearing the original.
-			Queue<Tuple<Socket, byte>> queued;
+			Queue<Tuple<Socket, uint>> queued;
 			lock (this.queuedIds)
 			{
-				queued = new Queue<Tuple<Socket, byte>>(this.queuedIds);
+				queued = new Queue<Tuple<Socket, uint>>(this.queuedIds);
 				this.queuedIds.Clear();
 			}
 
 			// Iterate over all queued items
 			while (queued.Count > 0)
 			{
-				(Socket connectedSocket, byte connectedId) = queued.Dequeue();
+				(Socket connectedSocket, uint connectedId) = queued.Dequeue();
 
 				SendPacket(
 					new ConnectionPacket(true, connectedId, $"{connectedSocket.RemoteEndPoint}"),
 					connectedSocket
 				);
 
+				// Add the remote player to our player list
+				this.players.Add(new NetworkPlayer
+					{
+						Connection = new NetworkConnection(IPEndPoint.Parse($"{connectedSocket.RemoteEndPoint}"))
+						{
+							ID = connectedId
+						},
+						IsLocalPlayer = false
+					}
+				);
+
 				// Iterate over each connected client that isn't the queued one
-				foreach (Socket connection in connected)
+				foreach (Socket connection in connected.Where(conn => conn != connectedSocket))
 				{
 					byte connectionIndex = (byte)connected.IndexOf(connection);
 
@@ -132,6 +162,33 @@ namespace DaisNET.Networking
 						new ConnectionPacket(false, connectionIndex, $"{connection.RemoteEndPoint}"),
 						connectedSocket
 					);
+				}
+			}
+
+			lock (this.connections)
+			{
+				// Find all connections that have disconnected
+				List<Socket> toDisconnect = this.connections.Where(con => !con.IsConnected()).ToList();
+				foreach (Socket connection in toDisconnect)
+				{
+					// Remove from the active connections list
+					this.connections.Remove(connection);
+
+					// Shut down the socket in both directions (send and receive) then close / release resources
+					connection.Shutdown(SocketShutdown.Both);
+					connection.Close();
+
+					// Check if there is any players with the correct ip
+					if (this.players.All(p => p.Connection.IP != connection.RemoteEndPoint))
+					{
+						continue;
+					}
+					
+					NetworkPlayer player = this.players.First(p => p.Connection.IP == connection.RemoteEndPoint);
+
+					// Return the id for this connection and remove it from the player list
+					this.returnedIds.Enqueue(player.Connection.ID);
+					this.players.Remove(player);
 				}
 			}
 
@@ -196,7 +253,7 @@ namespace DaisNET.Networking
 				}
 
 				// Assign an ID to the new client - reuse returned IDs or generate a new one
-				if (!this.returnedIds.TryDequeue(out byte id))
+				if (!this.returnedIds.TryDequeue(out uint id))
 				{
 					id = nextId++;
 				}
@@ -208,7 +265,7 @@ namespace DaisNET.Networking
 				}
 
 				// Notify listeners that a new client has connected
-				this.queuedIds.Enqueue(new Tuple<Socket, byte>(clientSocket.Result, id));
+				this.queuedIds.Enqueue(new Tuple<Socket, uint>(clientSocket.Result, id));
 			}
 		}
 	}

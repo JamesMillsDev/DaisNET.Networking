@@ -2,10 +2,15 @@
 {
 	public class NetworkPlayer
 	{
-		public byte ID { get; internal set; }
+		public NetworkConnection Connection { get; internal init; }
 		public bool IsLocalPlayer { get; internal set; }
 
-		public virtual void OnClientConnected(byte id)
+		public virtual void OnClientConnected()
+		{
+			
+		}
+
+		public virtual void OnClientDisconnected()
 		{
 			
 		}

@@ -342,7 +342,7 @@ namespace DaisNET.Networking
 		/// </summary>
 		/// <param name="id">The id of the player attempting to be found.</param>
 		/// <returns>A Player reference if found, null if id is not in use.</returns>
-		public NetworkPlayer? FindPlayer(byte id) => this.players.FirstOrDefault(player => player.ID == id);
+		public NetworkPlayer? FindPlayer(byte id) => this.players.FirstOrDefault(player => player.Connection.ID == id);
 
 		/// <summary>
 		/// Polls the network for incoming data and processes packets.
@@ -401,6 +401,9 @@ namespace DaisNET.Networking
 			return true;
 		}
 
+		/// <summary>
+		/// Registers the default standard set of packets that are required for the system to work.
+		/// </summary>
 		private void RegisterDefaultPackets()
 		{
 			RegisterPacket(ConnectionPacket.ID_NAME, typeof(ConnectionPacket));
