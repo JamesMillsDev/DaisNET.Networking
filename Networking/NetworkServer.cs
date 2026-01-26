@@ -6,7 +6,7 @@ using DaisNET.Utility.Extensions;
 
 namespace DaisNET.Networking
 {
-	public class NetworkServer : Network
+	public class NetworkServer<T> : Network<T> where T : NetworkPlayer, new()
 	{
 		/// <summary>
 		/// The next available ID to assign to a new client connection. Increments with each new connection.
@@ -131,12 +131,12 @@ namespace DaisNET.Networking
 				(Socket connectedSocket, uint connectedId) = queued.Dequeue();
 
 				SendPacket(
-					new ConnectionPacket(true, connectedId, $"{connectedSocket.RemoteEndPoint}"),
+					new ConnectionPacket<T>(true, connectedId, $"{connectedSocket.RemoteEndPoint}"),
 					connectedSocket
 				);
 
 				// Add the remote player to our player list
-				this.players.Add(new NetworkPlayer
+				this.players.Add(new T
 					{
 						Connection = new NetworkConnection(IPEndPoint.Parse($"{connectedSocket.RemoteEndPoint}"))
 						{
@@ -153,13 +153,13 @@ namespace DaisNET.Networking
 
 					// Send the connection packet for the new connection to the old ones
 					SendPacket(
-						new ConnectionPacket(false, connectedId, $"{connectedSocket.RemoteEndPoint}"),
+						new ConnectionPacket<T>(false, connectedId, $"{connectedSocket.RemoteEndPoint}"),
 						connection
 					);
 
 					// Send the connection packet for the old connection to the new one
 					SendPacket(
-						new ConnectionPacket(false, connectionIndex, $"{connection.RemoteEndPoint}"),
+						new ConnectionPacket<T>(false, connectionIndex, $"{connection.RemoteEndPoint}"),
 						connectedSocket
 					);
 				}
@@ -171,24 +171,24 @@ namespace DaisNET.Networking
 				List<Socket> toDisconnect = this.connections.Where(con => !con.IsConnected()).ToList();
 				foreach (Socket connection in toDisconnect)
 				{
-					// Remove from the active connections list
-					this.connections.Remove(connection);
-
-					// Shut down the socket in both directions (send and receive) then close / release resources
-					connection.Shutdown(SocketShutdown.Both);
-					connection.Close();
-
 					// Check if there is any players with the correct ip
 					if (this.players.All(p => p.Connection.IP != connection.RemoteEndPoint))
 					{
 						continue;
 					}
 					
-					NetworkPlayer player = this.players.First(p => p.Connection.IP == connection.RemoteEndPoint);
+					T player = this.players.First(p => p.Connection.IP == connection.RemoteEndPoint);
 
 					// Return the id for this connection and remove it from the player list
 					this.returnedIds.Enqueue(player.Connection.ID);
 					this.players.Remove(player);
+					
+					// Remove from the active connections list
+					this.connections.Remove(connection);
+
+					// Shut down the socket in both directions (send and receive) then close / release resources
+					connection.Shutdown(SocketShutdown.Both);
+					connection.Close();
 				}
 			}
 

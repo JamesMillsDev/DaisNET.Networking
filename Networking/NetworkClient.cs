@@ -8,7 +8,7 @@ namespace DaisNET.Networking
 	/// Client-side network implementation that connects to a remote server.
 	/// Manages connection to a single server socket and handles incoming packet processing.
 	/// </summary>
-	public class NetworkClient(string endpoint, int port) : Network(endpoint, port)
+	public class NetworkClient<T>(string endpoint, int port) : Network<T>(endpoint, port) where T : NetworkPlayer, new()
 	{
 		/// <summary>
 		/// Whether the client is connected to any server.

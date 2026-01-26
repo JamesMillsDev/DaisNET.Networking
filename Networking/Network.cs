@@ -10,12 +10,12 @@ namespace DaisNET.Networking
 	/// Abstract base class for network implementations (server and client).
 	/// Provides shared functionality for packet serialization, deserialization, and transmission.
 	/// </summary>
-	public abstract class Network
+	public abstract class Network<T> where T : NetworkPlayer, new()
 	{
 		/// <summary>
 		/// Gets the singleton instance of the current network implementation (either server or client).
 		/// </summary>
-		public static Network? Instance { get; private set; }
+		public static Network<T>? Instance { get; private set; }
 
 		/// <summary>
 		/// Initializes and runs the network loop based on command-line arguments.
@@ -23,7 +23,7 @@ namespace DaisNET.Networking
 		/// </summary>
 		/// <param name="app">The application instance used to check when to stop the network loop.</param>
 		/// <param name="ip">The IP that the network should connect to.</param>
-		public static async Task RunNetworkLoop(NetworkApplicationBase app, string ip = "")
+		public static async Task RunNetworkLoop(NetworkApplicationBase<T> app, string ip = "")
 		{
 			try
 			{
@@ -142,7 +142,7 @@ namespace DaisNET.Networking
 		/// <param name="endpoint">The hostname or IP address to bind to. Defaults to "localhost".</param>
 		/// <param name="port">The port number to listen on. Defaults to 25565.</param>
 		private static void CreateServer(string endpoint = "localhost", int port = 25565) =>
-			Instance = new NetworkServer(endpoint, port);
+			Instance = new NetworkServer<T>(endpoint, port);
 
 		/// <summary>
 		/// Creates and initializes a new network client instance.
@@ -150,7 +150,7 @@ namespace DaisNET.Networking
 		/// <param name="endpoint">The hostname or IP address of the server to connect to.</param>
 		/// <param name="port">The port number to connect to. Defaults to 25565.</param>
 		private static void CreateClient(string endpoint, int port = 25565) =>
-			Instance = new NetworkClient(endpoint, port);
+			Instance = new NetworkClient<T>(endpoint, port);
 
 		/// <summary>
 		/// Parses a packet buffer to extract the packet ID and payload data.
@@ -207,7 +207,7 @@ namespace DaisNET.Networking
 		/// </summary>
 		/// <param name="app">The application instance to monitor for shutdown.</param>
 		/// <param name="endpoint">The server endpoint address (only used for client mode).</param>
-		private static async Task InitializeAndPoll(NetworkApplicationBase app, string endpoint)
+		private static async Task InitializeAndPoll(NetworkApplicationBase<T> app, string endpoint)
 		{
 			if (app.IsServer)
 			{
@@ -259,7 +259,7 @@ namespace DaisNET.Networking
 		/// <summary>
 		/// The list of connected players which is automatically filled by <see cref="ConnectionPacket"/>.
 		/// </summary>
-		internal readonly List<NetworkPlayer> players = [];
+		internal readonly List<T> players = [];
 
 		/// <summary>
 		/// The underlying socket used for network communication.
@@ -342,7 +342,7 @@ namespace DaisNET.Networking
 		/// </summary>
 		/// <param name="id">The id of the player attempting to be found.</param>
 		/// <returns>A Player reference if found, null if id is not in use.</returns>
-		public NetworkPlayer? FindPlayer(byte id) => this.players.FirstOrDefault(player => player.Connection.ID == id);
+		public T? FindPlayer(byte id) => this.players.FirstOrDefault(player => player.Connection.ID == id);
 
 		/// <summary>
 		/// Polls the network for incoming data and processes packets.
@@ -406,7 +406,7 @@ namespace DaisNET.Networking
 		/// </summary>
 		private void RegisterDefaultPackets()
 		{
-			RegisterPacket(ConnectionPacket.ID_NAME, typeof(ConnectionPacket));
+			RegisterPacket(ConnectionPacket<T>.ID_NAME, typeof(ConnectionPacket<T>));
 		}
 	}
 }
