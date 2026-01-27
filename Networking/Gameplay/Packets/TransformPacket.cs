@@ -1,4 +1,4 @@
-﻿using DaisNET.Gameplay;
+﻿using DaisNET.Networking.Gameplay;
 using DaisNET.Networking.Serialization;
 
 namespace DaisNET.Networking.Packets.Gameplay

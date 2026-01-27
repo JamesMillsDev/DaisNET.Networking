@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using DaisNET.Networking.Packets;
+using DaisNET.Networking.Packets.Base;
 using DaisNET.Utility;
 using DaisNET.Utility.Extensions;
 

@@ -2,8 +2,8 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using DaisNET.Gameplay;
 using DaisNET.Networking.Packets;
+using DaisNET.Networking.Packets.Base;
 using DaisNET.Networking.Packets.Gameplay;
 
 namespace DaisNET.Networking

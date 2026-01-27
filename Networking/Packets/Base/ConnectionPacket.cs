@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace DaisNET.Networking.Packets
+namespace DaisNET.Networking.Packets.Base
 {
 	/// <summary>
 	/// Packet sent from server to client to establish player identity and connection information.
@@ -49,8 +49,8 @@ namespace DaisNET.Networking.Packets
 		public override void Serialize(PacketWriter writer)
 		{
 			writer.Write(this.isLocalPlayer);
-			writer.Write(id);
-			writer.Write(ipConnection);
+			writer.Write(this.id);
+			writer.Write(this.ipConnection);
 		}
 
 		/// <summary>
