@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System.Collections.Concurrent;
+using System.Data;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -12,12 +13,12 @@ namespace DaisNET.Networking
 	/// Abstract base class for network implementations (server and client).
 	/// Provides shared functionality for packet serialization, deserialization, and transmission.
 	/// </summary>
-	public abstract class Network<T> where T : NetworkPlayer, new()
+	public abstract class Network
 	{
 		/// <summary>
 		/// Gets the singleton instance of the current network implementation (either server or client).
 		/// </summary>
-		public static Network<T>? Instance { get; private set; }
+		public static Network? Instance { get; private set; }
 
 		/// <summary>
 		/// Initializes and runs the network loop based on command-line arguments.
@@ -25,11 +26,12 @@ namespace DaisNET.Networking
 		/// </summary>
 		/// <param name="app">The application instance used to check when to stop the network loop.</param>
 		/// <param name="ip">The IP that the network should connect to.</param>
-		public static async Task RunNetworkLoop(NetworkApplicationBase<T> app, string ip = "")
+		/// <typeparam name="T">The type of player that will be created when <see cref="MakePlayer"/> is called.</typeparam>
+		public static async Task RunNetworkLoop<T>(NetworkApplicationBase app, string ip = "")
 		{
 			try
 			{
-				await InitializeAndPoll(app, ip);
+				await InitializeAndPoll(app, typeof(T), ip);
 			}
 			catch (Exception e)
 			{
@@ -125,17 +127,19 @@ namespace DaisNET.Networking
 		protected static void SendPacket(Packet packet, Socket target)
 		{
 			// Serialize the packet (ID + payload data)
-			PacketWriter writer = new(packet.ID);
-			packet.Serialize(writer);
+			using (PacketWriter writer = new(packet.ID))
+			{
+				packet.Serialize(writer);
 
-			byte[] serialized = writer.GetBytes();
+				byte[] serialized = writer.GetBytes();
 
-			// Prepend the total length as a 4-byte prefix
-			byte[] data = new byte[serialized.Length + sizeof(int)];
-			Array.Copy(BitConverter.GetBytes(serialized.Length), data, sizeof(int));
-			Array.Copy(serialized, 0, data, sizeof(int), serialized.Length);
+				// Prepend the total length as a 4-byte prefix
+				byte[] data = new byte[serialized.Length + sizeof(int)];
+				Array.Copy(BitConverter.GetBytes(serialized.Length), data, sizeof(int));
+				Array.Copy(serialized, 0, data, sizeof(int), serialized.Length);
 
-			target.Send(data);
+				target.Send(data);
+			}
 		}
 
 		/// <summary>
@@ -144,7 +148,7 @@ namespace DaisNET.Networking
 		/// <param name="endpoint">The hostname or IP address to bind to. Defaults to "localhost".</param>
 		/// <param name="port">The port number to listen on. Defaults to 25565.</param>
 		private static void CreateServer(string endpoint = "localhost", int port = 25565) =>
-			Instance = new NetworkServer<T>(endpoint, port);
+			Instance = new NetworkServer(endpoint, port);
 
 		/// <summary>
 		/// Creates and initializes a new network client instance.
@@ -152,7 +156,7 @@ namespace DaisNET.Networking
 		/// <param name="endpoint">The hostname or IP address of the server to connect to.</param>
 		/// <param name="port">The port number to connect to. Defaults to 25565.</param>
 		private static void CreateClient(string endpoint, int port = 25565) =>
-			Instance = new NetworkClient<T>(endpoint, port);
+			Instance = new NetworkClient(endpoint, port);
 
 		/// <summary>
 		/// Parses a packet buffer to extract the packet ID and payload data.
@@ -208,8 +212,9 @@ namespace DaisNET.Networking
 		/// Continues polling until the application signals it is closing.
 		/// </summary>
 		/// <param name="app">The application instance to monitor for shutdown.</param>
+		/// <param name = "type"></param>
 		/// <param name="endpoint">The server endpoint address (only used for client mode).</param>
-		private static async Task InitializeAndPoll(NetworkApplicationBase<T> app, string endpoint)
+		private static async Task InitializeAndPoll(NetworkApplicationBase app, Type type, string endpoint)
 		{
 			if (app.IsServer)
 			{
@@ -225,6 +230,7 @@ namespace DaisNET.Networking
 				throw new NullReferenceException("Network instance is null");
 			}
 
+			Instance.networkPlayerType = type;
 			Instance.Open();
 			Instance.RegisterDefaultPackets();
 
@@ -240,7 +246,6 @@ namespace DaisNET.Networking
 					catch (Exception e)
 					{
 						Console.WriteLine($"Network - Initialise And Poll (Poll):Exception caught: {e}");
-						throw;
 					}
 				}
 
@@ -261,7 +266,7 @@ namespace DaisNET.Networking
 		/// <summary>
 		/// The list of connected players which is automatically filled by <see cref="ConnectionPacket"/>.
 		/// </summary>
-		internal readonly List<T> players = [];
+		internal readonly List<NetworkPlayer> players = [];
 
 		/// <summary>
 		/// The underlying socket used for network communication.
@@ -288,7 +293,12 @@ namespace DaisNET.Networking
 		/// Dictionary mapping packet IDs to their corresponding packet types.
 		/// Used to instantiate the correct packet class when receiving data.
 		/// </summary>
-		private readonly Dictionary<string, Type> registeredPackets = new();
+		private readonly ConcurrentDictionary<string, Type> registeredPackets = new();
+
+		/// <summary>
+		/// The type of player that will be constructed when the <see cref="MakePlayer"/> function is called.
+		/// </summary>
+		private Type? networkPlayerType;
 
 		/// <summary>
 		/// Initializes a new instance of the Network class with the specified hostname and port.
@@ -305,6 +315,34 @@ namespace DaisNET.Networking
 
 			this.socket = null;
 			this.pollRate = pollRate;
+		}
+
+		internal T? MakePlayer<T>(string endpoint, uint id, bool isLocalPlayer) where T : NetworkPlayer
+		{
+			if (this.networkPlayerType == null)
+			{
+				throw new NullReferenceException("Network player type is null!");
+			}
+
+			if (!this.networkPlayerType.IsSubclassOf(typeof(NetworkPlayer)))
+			{
+				throw new InvalidCastException($"{this.networkPlayerType.Name} is not a NetworkPlayer!");
+			}
+
+			if (!this.networkPlayerType.IsAssignableTo(typeof(T)))
+			{
+				throw new InvalidCastException($"{typeof(T).Name} is not a NetworkPlayer!");
+			}
+
+			T? player = (T?)Activator.CreateInstance(
+				this.networkPlayerType,
+				new NetworkConnection(IPEndPoint.Parse(endpoint))
+				{
+					ID = id
+				},
+				isLocalPlayer
+			);
+			return player;
 		}
 
 		/// <summary>
@@ -331,9 +369,12 @@ namespace DaisNET.Networking
 		/// <returns>True if the packet was successfully registered, false if a packet with this ID already exists.</returns>
 		public void RegisterPacket(string id, Type type)
 		{
-			if (this.registeredPackets.TryAdd(id, type))
+			lock (this.registeredPackets)
 			{
-				return;
+				if (this.registeredPackets.TryAdd(id, type))
+				{
+					return;
+				}
 			}
 
 			throw new DuplicateNameException($"Duplicate packet id '{id}'");
@@ -344,7 +385,8 @@ namespace DaisNET.Networking
 		/// </summary>
 		/// <param name="id">The id of the player attempting to be found.</param>
 		/// <returns>A Player reference if found, null if id is not in use.</returns>
-		public T? FindPlayer(byte id) => this.players.FirstOrDefault(player => player.Connection.ID == id);
+		public T? FindPlayer<T>(byte id) where T : NetworkPlayer =>
+			(T?)this.players.FirstOrDefault(player => player.Connection.ID == id);
 
 		/// <summary>
 		/// Polls the network for incoming data and processes packets.
@@ -390,17 +432,20 @@ namespace DaisNET.Networking
 				return false;
 			}
 
-			// Attempt to get the packet type from the registered packets dictionary
-			if (!this.registeredPackets.TryGetValue(id, out Type? type))
+			lock (this.registeredPackets)
 			{
-				Console.WriteLine($"No packet with id {id} found.");
-				packet = null;
-				return false;
-			}
+				// Attempt to get the packet type from the registered packets dictionary
+				if (!this.registeredPackets.TryGetValue(id, out Type? type))
+				{
+					Console.WriteLine($"No packet with id {id} found.");
+					packet = null;
+					return false;
+				}
 
-			// Create and return the packet instance
-			packet = (Packet)Activator.CreateInstance(type)!;
-			return true;
+				// Create and return the packet instance
+				packet = (Packet)Activator.CreateInstance(type)!;
+				return true;
+			}
 		}
 
 		/// <summary>
@@ -408,9 +453,9 @@ namespace DaisNET.Networking
 		/// </summary>
 		private void RegisterDefaultPackets()
 		{
-			RegisterPacket(ConnectionPacket<T>.PACKET_ID, typeof(ConnectionPacket<T>));
-			RegisterPacket(TransformPacket<T>.PACKET_ID, typeof(TransformPacket<T>));
-			RegisterPacket(VelocityStatePacket<T>.PACKET_ID, typeof(VelocityStatePacket<T>));
+			RegisterPacket(ConnectionPacket.PACKET_ID, typeof(ConnectionPacket));
+			RegisterPacket(TransformPacket.PACKET_ID, typeof(TransformPacket));
+			RegisterPacket(VelocityStatePacket.PACKET_ID, typeof(VelocityStatePacket));
 		}
 	}
 }

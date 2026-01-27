@@ -2,40 +2,39 @@
 
 namespace DaisNET.Networking
 {
-	public abstract class NetworkApplicationBase<T>(bool isServer)
-		where T : NetworkPlayer, new()
+	public abstract class NetworkApplicationBase(bool isServer)
 	{
 		public bool IsClosing { get; private set; }
 		public bool IsServer { get; } = isServer;
 
 		public async Task Run()
 		{
-			await Tasks.While(() => Network<T>.Instance == null);
+			await Tasks.While(() => Network.Instance == null);
 
-			if (Network<T>.Instance == null)
+			if (Network.Instance == null)
 			{
 				// this should literally be impossible
 				return;
 			}
 
-			RegisterPackets(Network<T>.Instance);
+			RegisterPackets(Network.Instance);
 
 			this.IsClosing = false;
-			Initialise(Network<T>.Instance);
+			Initialise(Network.Instance);
 
 			while (!ShouldClose())
 			{
-				Tick(Network<T>.Instance);
+				Tick(Network.Instance);
 			}
 
-			Shutdown(Network<T>.Instance);
+			Shutdown(Network.Instance);
 			this.IsClosing = true;
 		}
 
-		protected abstract void RegisterPackets(Network<T> network);
+		protected abstract void RegisterPackets(Network network);
 		protected abstract bool ShouldClose();
-		protected abstract void Initialise(Network<T> network);
-		protected abstract void Tick(Network<T> network);
-		protected abstract void Shutdown(Network<T> network);
+		protected abstract void Initialise(Network network);
+		protected abstract void Tick(Network network);
+		protected abstract void Shutdown(Network network);
 	}
 }

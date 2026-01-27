@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using DaisNET.Utility.Extensions;
 
 namespace DaisNET.Networking.Serialization
 {
@@ -20,10 +21,10 @@ namespace DaisNET.Networking.Serialization
 			{
 				return new Quaternion
 				{
-					X = BitConverter.ToSingle(stream.ToArray(), 0),
-					Y = BitConverter.ToSingle(stream.ToArray(), 0),
-					Z = BitConverter.ToSingle(stream.ToArray(), 0),
-					W = BitConverter.ToSingle(stream.ToArray(), 0)
+					X = BitConverter.ToSingle(stream.ReadBytes(sizeof(float)), 0),
+					Y = BitConverter.ToSingle(stream.ReadBytes(sizeof(float)), 0),
+					Z = BitConverter.ToSingle(stream.ReadBytes(sizeof(float)), 0),
+					W = BitConverter.ToSingle(stream.ReadBytes(sizeof(float)), 0)
 				};
 			}
 		}

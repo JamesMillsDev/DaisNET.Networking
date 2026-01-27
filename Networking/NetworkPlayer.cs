@@ -1,9 +1,9 @@
 ﻿namespace DaisNET.Networking
 {
-	public class NetworkPlayer
+	public class NetworkPlayer(NetworkConnection connection, bool isLocalPlayer)
 	{
-		public NetworkConnection Connection { get; internal init; }
-		public bool IsLocalPlayer { get; internal set; }
+		public NetworkConnection Connection { get; } = connection;
+		public bool IsLocalPlayer { get; internal set; } = isLocalPlayer;
 
 		public virtual void OnClientConnected()
 		{

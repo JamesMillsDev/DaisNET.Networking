@@ -154,8 +154,6 @@ namespace DaisNET.Networking.Packets
 		public void Dispose()
 		{
 			this.stream.Dispose();
-
-			GC.SuppressFinalize(this);
 		}
 
 		/// <summary>
@@ -164,8 +162,6 @@ namespace DaisNET.Networking.Packets
 		public async ValueTask DisposeAsync()
 		{
 			await this.stream.DisposeAsync();
-
-			GC.SuppressFinalize(this);
 		}
 	}
 }

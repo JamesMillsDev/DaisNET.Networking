@@ -7,8 +7,7 @@ namespace DaisNET.Networking.Gameplay.Packets
 	/// Packet that synchronizes an actor's transform (position, rotation, scale) across the network.
 	/// Used to keep game objects in sync between server and clients.
 	/// </summary>
-	public class TransformPacket<T>() : Packet(PACKET_ID)
-		where T : NetworkPlayer, new()
+	public class TransformPacket() : Packet(PACKET_ID)
 	{
 		/// <summary>
 		/// The unique identifier for this packet type used for registration and routing.
@@ -65,17 +64,17 @@ namespace DaisNET.Networking.Gameplay.Packets
 		public override Task Process()
 		{
 			// Ensure network instance exists before processing
-			if (Network<T>.Instance == null)
+			if (Network.Instance == null)
 			{
 				// This should never happen
 				return Task.CompletedTask;
 			}
 
 			// Server: Broadcast the transform update to all clients
-			if (Network<T>.Instance.HasAuthority)
+			if (Network.Instance.HasAuthority)
 			{
-				((NetworkServer<T>)Network<T>.Instance).BroadcastPacket(
-					new TransformPacket<T>(this.actorId, this.transform)
+				((NetworkServer)Network.Instance).BroadcastPacket(
+					new TransformPacket(this.actorId, this.transform)
 				);
 			}
 

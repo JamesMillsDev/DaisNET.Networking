@@ -1,5 +1,4 @@
-﻿using System.Net;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using DaisNET.Networking.Packets;
 using DaisNET.Networking.Packets.Base;
 using DaisNET.Utility;
@@ -7,7 +6,7 @@ using DaisNET.Utility.Extensions;
 
 namespace DaisNET.Networking
 {
-	public class NetworkServer<T> : Network<T> where T : NetworkPlayer, new()
+	public class NetworkServer : Network
 	{
 		/// <summary>
 		/// The next available ID to assign to a new client connection. Increments with each new connection.
@@ -132,20 +131,27 @@ namespace DaisNET.Networking
 				(Socket connectedSocket, uint connectedId) = queued.Dequeue();
 
 				SendPacket(
-					new ConnectionPacket<T>(true, connectedId, $"{connectedSocket.RemoteEndPoint}"),
+					new ConnectionPacket(true, connectedId, $"{connectedSocket.RemoteEndPoint}"),
 					connectedSocket
 				);
 
-				// Add the remote player to our player list
-				this.players.Add(new T
+				lock (this.players)
+				{
+					// Create a new NetworkPlayer with the received connection information
+					NetworkPlayer? player = MakePlayer<NetworkPlayer>(
+						$"{connectedSocket.RemoteEndPoint}",
+						connectedId,
+						false
+					);
+				
+					if (player == null)
 					{
-						Connection = new NetworkConnection(IPEndPoint.Parse($"{connectedSocket.RemoteEndPoint}"))
-						{
-							ID = connectedId
-						},
-						IsLocalPlayer = false
+						throw new NullReferenceException("Player failed to construct!");
 					}
-				);
+					
+					// Add the remote player to our player list
+					this.players.Add(player);
+				}
 
 				// Iterate over each connected client that isn't the queued one
 				foreach (Socket connection in connected.Where(conn => conn != connectedSocket))
@@ -154,13 +160,13 @@ namespace DaisNET.Networking
 
 					// Send the connection packet for the new connection to the old ones
 					SendPacket(
-						new ConnectionPacket<T>(false, connectedId, $"{connectedSocket.RemoteEndPoint}"),
+						new ConnectionPacket(false, connectedId, $"{connectedSocket.RemoteEndPoint}"),
 						connection
 					);
 
 					// Send the connection packet for the old connection to the new one
 					SendPacket(
-						new ConnectionPacket<T>(false, connectionIndex, $"{connection.RemoteEndPoint}"),
+						new ConnectionPacket(false, connectionIndex, $"{connection.RemoteEndPoint}"),
 						connectedSocket
 					);
 				}
@@ -172,17 +178,20 @@ namespace DaisNET.Networking
 				List<Socket> toDisconnect = this.connections.Where(con => !con.IsConnected()).ToList();
 				foreach (Socket connection in toDisconnect)
 				{
-					// Check if there is any players with the correct ip
-					if (this.players.All(p => p.Connection.IP != connection.RemoteEndPoint))
+					lock (this.players)
 					{
-						continue;
-					}
+						// Check if there is any players with the correct ip
+						if (this.players.All(p => p.Connection.IP != connection.RemoteEndPoint))
+						{
+							continue;
+						}
 					
-					T player = this.players.First(p => p.Connection.IP == connection.RemoteEndPoint);
+						NetworkPlayer player = this.players.First(p => p.Connection.IP == connection.RemoteEndPoint);
 
-					// Return the id for this connection and remove it from the player list
-					this.returnedIds.Enqueue(player.Connection.ID);
-					this.players.Remove(player);
+						// Return the id for this connection and remove it from the player list
+						this.returnedIds.Enqueue(player.Connection.ID);
+						this.players.Remove(player);
+					}
 					
 					// Remove from the active connections list
 					this.connections.Remove(connection);
@@ -265,8 +274,11 @@ namespace DaisNET.Networking
 					this.connections.Add(clientSocket.Result);
 				}
 
-				// Notify listeners that a new client has connected
-				this.queuedIds.Enqueue(new Tuple<Socket, uint>(clientSocket.Result, id));
+				lock (this.queuedIds)
+				{
+					// Notify listeners that a new client has connected
+					this.queuedIds.Enqueue(new Tuple<Socket, uint>(clientSocket.Result, id));
+				}
 			}
 		}
 	}

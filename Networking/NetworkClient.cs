@@ -8,7 +8,7 @@ namespace DaisNET.Networking
 	/// Client-side network implementation that connects to a remote server.
 	/// Manages connection to a single server socket and handles incoming packet processing.
 	/// </summary>
-	public class NetworkClient<T>(string endpoint, int port) : Network<T>(endpoint, port) where T : NetworkPlayer, new()
+	public class NetworkClient(string endpoint, int port) : Network(endpoint, port)
 	{
 		/// <summary>
 		/// Whether the client is connected to any server.
@@ -98,10 +98,18 @@ namespace DaisNET.Networking
 		{
 			await Tasks.While(() => this.socket == null);
 
-			Task connectionTask = this.socket!.ConnectAsync(this.targetEndPoint);
-			Task completedTask = await Task.WhenAny(connectionTask, Task.Delay(this.connectionTimeout));
-
-			return completedTask == connectionTask;
+			using (CancellationTokenSource cts = new(this.connectionTimeout))
+			{
+				try
+				{
+					await this.socket!.ConnectAsync(this.targetEndPoint, cts.Token);
+					return true;
+				}
+				catch (OperationCanceledException)
+				{
+					return false;
+				}
+			}
 		}
 	}
 }

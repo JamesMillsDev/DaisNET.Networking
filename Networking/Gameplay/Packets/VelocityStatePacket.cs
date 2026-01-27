@@ -8,9 +8,7 @@ namespace DaisNET.Networking.Gameplay.Packets
     /// Uses a generic type parameter to specify the NetworkPlayer type for type-safe network access.
     /// Identifies actors by their unique GUID rather than by name.
     /// </summary>
-    /// <typeparam name="T">The type of NetworkPlayer used by this network instance. Must have a parameterless constructor.</typeparam>
-    public class VelocityStatePacket<T>() : Packet(PACKET_ID)
-       where T : NetworkPlayer, new()
+    public class VelocityStatePacket() : Packet(PACKET_ID)
     {
        /// <summary>
        /// The unique identifier for this packet type used for registration and routing.
@@ -69,7 +67,7 @@ namespace DaisNET.Networking.Gameplay.Packets
        public override Task Process()
        {
           // Ensure network instance exists before processing
-          if (Network<T>.Instance == null)
+          if (Network.Instance == null)
           {
              // This should never happen
              return Task.CompletedTask;

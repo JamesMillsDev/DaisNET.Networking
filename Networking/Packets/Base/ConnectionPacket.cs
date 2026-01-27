@@ -1,13 +1,10 @@
-﻿using System.Net;
-
-namespace DaisNET.Networking.Packets.Base
+﻿namespace DaisNET.Networking.Packets.Base
 {
 	/// <summary>
 	/// Packet sent from server to client to establish player identity and connection information.
 	/// Contains the assigned player ID, whether this is the local player, and the IP endpoint.
 	/// </summary>
-	public class ConnectionPacket<T>() : Packet(PACKET_ID)
-		where T : NetworkPlayer, new()
+	public class ConnectionPacket() : Packet(PACKET_ID)
 	{
 		/// <summary>
 		/// The unique identifier for this packet type used for registration and routing.
@@ -72,24 +69,29 @@ namespace DaisNET.Networking.Packets.Base
 		public override Task Process()
 		{
 			// Ensure network instance exists before processing
-			if (Network<T>.Instance == null)
+			if (Network.Instance == null)
 			{
 				return Task.CompletedTask;
 			}
 
-			// Create a new NetworkPlayer with the received connection information
-			T player = new()
+			lock (Network.Instance.players)
 			{
-				Connection = new NetworkConnection(IPEndPoint.Parse(this.ipConnection))
+				// Create a new NetworkPlayer with the received connection information
+				NetworkPlayer? player = Network.Instance.MakePlayer<NetworkPlayer>(
+					this.ipConnection,
+					this.id,
+					this.isLocalPlayer
+				);
+				
+				if (player == null)
 				{
-					ID = this.id
-				},
-				IsLocalPlayer = this.isLocalPlayer
-			};
+					throw new NullReferenceException("Player failed to construct!");
+				}
 
-			// Notify that the client has connected and add to the players list
-			player.OnClientConnected();
-			Network<T>.Instance.players.Add(player);
+				// Notify that the client has connected and add to the players list
+				player.OnClientConnected();
+				Network.Instance.players.Add(player);
+			}
 
 			return Task.CompletedTask;
 		}
