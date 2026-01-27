@@ -1,15 +1,14 @@
 ﻿using DaisNET.Networking;
-using DaisNET.Networking.Packets.Gameplay;
 
 namespace DaisNET.Gameplay
 {
-	public class Actor<T>(string name)
+	public class Actor<T>(string name, T player)
 		where T : NetworkPlayer, new()
 	{
 		public Transform Transform { get; set; } = new();
 		public string Name { get; } = name;
 
-		public T Player { get; internal init; }
+		public T Player { get; } = player;
 
 		public virtual void Init()
 		{
@@ -25,16 +24,6 @@ namespace DaisNET.Gameplay
 
 		public virtual void DeInit()
 		{
-		}
-
-		internal void SyncTransform()
-		{
-			if (Player.IsLocalPlayer)
-			{
-				Network<T>.Instance?.SendPacket(
-					new TransformPacket<T>(this.Name, this.Transform)
-				);
-			}
 		}
 	}
 }

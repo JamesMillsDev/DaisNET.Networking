@@ -52,7 +52,7 @@ namespace DaisNET.Networking.Packets.Gameplay
 		public override void Deserialize(PacketReader reader)
 		{
 			this.actorName = reader.ReadString();
-			this.transform = reader.ReadPacketSerializable<Transform>();
+			this.transform = reader.ReadSerialized<Transform>();
 		}
 
 		/// <summary>
@@ -78,6 +78,18 @@ namespace DaisNET.Networking.Packets.Gameplay
 				);
 			}
 
+			/*// Attempt to find the target actor for this packet
+			Actor<T>? target = Network<T>.Instance.Actors.FirstOrDefault(actor => actor.Name == this.actorName);
+			if (target == null)
+			{
+				return Task.CompletedTask;
+			}
+			
+			// The target was found, so update the transform
+			target.Transform.Position = this.transform.Position;
+			target.Transform.Size = this.transform.Size;
+			target.Transform.Velocity = this.transform.Velocity;*/
+			
 			return Task.CompletedTask;
 		}
 	}

@@ -180,7 +180,7 @@ namespace DaisNET.Networking.Packets
 		/// <typeparam name="T">The type of object to deserialize, must implement <see cref="IPacketSerializable"/>.</typeparam>
 		/// <returns>The deserialized object instance.</returns>
 		/// <exception cref="Exception">Thrown when the stream is not readable.</exception>
-		public T ReadPacketSerializable<T>() where T : IPacketSerializable, new()
+		public T ReadSerialized<T>() where T : IPacketSerializable, new()
 		{
 			if (!this.stream.CanRead)
 			{

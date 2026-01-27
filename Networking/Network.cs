@@ -257,8 +257,6 @@ namespace DaisNET.Networking
 		/// The authoritative instance is responsible for game state and validation.
 		/// </summary>
 		public bool HasAuthority { get; protected init; }
-		
-		public ActorList<T> Actors { get; } = [];
 
 		/// <summary>
 		/// The list of connected players which is automatically filled by <see cref="ConnectionPacket"/>.
