@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using System.Collections.Concurrent;
+using System.Net.Sockets;
 using DaisNET.Networking.Packets;
 using DaisNET.Networking.Packets.Base;
 using DaisNET.Utility;
@@ -33,7 +34,7 @@ namespace DaisNET.Networking
 		/// <summary>
 		/// Queue of IDs that have been returned (from disconnected clients) and can be reused.
 		/// </summary>
-		private readonly Queue<uint> returnedIds = [];
+		private readonly ConcurrentQueue<uint> returnedIds = [];
 
 		/// <summary>
 		/// Queue of sockets awaiting ID assignment paired with their assigned IDs.
@@ -77,9 +78,16 @@ namespace DaisNET.Networking
 		/// <param name="packet">The packet to serialize and broadcast to all clients.</param>
 		public void BroadcastPacket(Packet packet)
 		{
+			List<Socket> currentConnections = [];
 			lock (this.connections)
 			{
-				foreach (Socket connection in this.connections)
+				currentConnections.AddRange(this.connections);
+			}
+
+			// Send the packet to each player that is currently connected
+			foreach (Socket connection in currentConnections)
+			{
+				lock (connection)
 				{
 					PacketProtocols.SendPacket(packet, connection);
 				}
@@ -130,10 +138,13 @@ namespace DaisNET.Networking
 			{
 				(Socket connectedSocket, uint connectedId) = queued.Dequeue();
 
-				PacketProtocols.SendPacket(
-					new ConnectionPacket(true, connectedId, $"{connectedSocket.RemoteEndPoint}"),
-					connectedSocket
-				);
+				lock (connectedSocket)
+				{
+					PacketProtocols.SendPacket(
+						new ConnectionPacket(true, connectedId, $"{connectedSocket.RemoteEndPoint}"),
+						connectedSocket
+					);
+				}
 
 				lock (this.players)
 				{
@@ -143,12 +154,12 @@ namespace DaisNET.Networking
 						connectedId,
 						false
 					);
-				
+
 					if (player == null)
 					{
 						throw new NullReferenceException("Player failed to construct!");
 					}
-					
+
 					// Add the remote player to our player list
 					this.players.Add(player);
 				}
@@ -158,18 +169,31 @@ namespace DaisNET.Networking
 				{
 					byte connectionIndex = (byte)connected.IndexOf(connection);
 
-					// Send the connection packet for the new connection to the old ones
-					PacketProtocols.SendPacket(
-						new ConnectionPacket(false, connectedId, $"{connectedSocket.RemoteEndPoint}"),
-						connection
-					);
+					lock (connection)
+					{
+						// Send the connection packet for the new connection to the old ones
+						PacketProtocols.SendPacket(
+							new ConnectionPacket(false, connectedId, $"{connectedSocket.RemoteEndPoint}"),
+							connection
+						);
+					}
 
-					// Send the connection packet for the old connection to the new one
-					PacketProtocols.SendPacket(
-						new ConnectionPacket(false, connectionIndex, $"{connection.RemoteEndPoint}"),
-						connectedSocket
-					);
+					lock (connectedSocket)
+					{
+						// Send the connection packet for the old connection to the new one
+						PacketProtocols.SendPacket(
+							new ConnectionPacket(false, connectionIndex, $"{connection.RemoteEndPoint}"),
+							connectedSocket
+						);
+					}
 				}
+			}
+
+			List<NetworkPlayer> playersToDisconnect = [];
+			List<NetworkPlayer> activePlayers = [];
+			lock (this.players)
+			{
+				activePlayers.AddRange(this.players);
 			}
 
 			lock (this.connections)
@@ -178,27 +202,33 @@ namespace DaisNET.Networking
 				List<Socket> toDisconnect = this.connections.Where(con => !con.IsConnected()).ToList();
 				foreach (Socket connection in toDisconnect)
 				{
-					lock (this.players)
+					// Check if there is any players with the correct ip
+					if (activePlayers.All(p => p.Connection.IP != connection.RemoteEndPoint))
 					{
-						// Check if there is any players with the correct ip
-						if (this.players.All(p => p.Connection.IP != connection.RemoteEndPoint))
-						{
-							continue;
-						}
-					
-						NetworkPlayer player = this.players.First(p => p.Connection.IP == connection.RemoteEndPoint);
-
-						// Return the id for this connection and remove it from the player list
-						this.returnedIds.Enqueue(player.Connection.ID);
-						this.players.Remove(player);
+						continue;
 					}
-					
+
+					NetworkPlayer player = activePlayers.First(p => p.Connection.IP == connection.RemoteEndPoint);
+
+					// Return the id for this connection and remove it from the player list
+					this.returnedIds.Enqueue(player.Connection.ID);
+					playersToDisconnect.Add(player);
+
 					// Remove from the active connections list
 					this.connections.Remove(connection);
 
 					// Shut down the socket in both directions (send and receive) then close / release resources
 					connection.Shutdown(SocketShutdown.Both);
 					connection.Close();
+				}
+			}
+
+			// Remove each player that should be disconnected
+			lock (this.players)
+			{
+				foreach (NetworkPlayer player in playersToDisconnect)
+				{
+					this.players.Remove(player);
 				}
 			}
 
@@ -227,8 +257,20 @@ namespace DaisNET.Networking
 				// Disconnect each client from the server
 				foreach (Socket connection in this.connections)
 				{
-					connection.Shutdown(SocketShutdown.Both);
-					connection.Close();
+					try
+					{
+						// If the socket is connected, shut it down.
+						if (connection.Connected)
+						{
+							connection.Shutdown(SocketShutdown.Both);
+						}
+
+						connection.Close();
+					}
+					catch (Exception e)
+					{
+						Console.WriteLine($"Error closing connection: {e}");
+					}
 				}
 
 				// Clear the connection list

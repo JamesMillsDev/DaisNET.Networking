@@ -227,7 +227,7 @@ namespace DaisNET.Networking
 		/// <returns>True if the packet was successfully registered, false if a packet with this ID already exists.</returns>
 		public void RegisterPacket(ushort id, Type type)
 		{
-			if (id <= (ulong)InternalPackets.Max)
+			if (id <= (ushort)InternalPackets.Max)
 			{
 				throw new IndexOutOfRangeException("Past id is within internal range. ID's must be 256 or greater.");
 			}
@@ -280,7 +280,7 @@ namespace DaisNET.Networking
 			{
 				if (!this.socket.Connected)
 				{
-					throw new InvalidOperationException("Socket not connected");
+					return;
 				}
 				
 				this.socket.Shutdown(SocketShutdown.Both);

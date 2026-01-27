@@ -105,7 +105,7 @@ namespace DaisNET.Networking.Packets
 		/// Initializes a new PacketWriter and automatically writes the packet ID to the stream.
 		/// </summary>
 		/// <param name="id">The unique identifier for this packet type.</param>
-		public PacketWriter(ulong id)
+		public PacketWriter(ushort id)
 		{
 			this.stream = new MemoryStream();
 			this.stream.Capacity = Packet.MAX_PACKET_SIZE;

@@ -16,7 +16,7 @@
 		/// Gets the unique identifier for this packet type.
 		/// Used to determine which packet class to instantiate when receiving data.
 		/// </summary>
-		public ulong ID { get; internal set; }
+		public ushort ID { get; internal set; }
 
 		/// <summary>
 		/// Serializes this packet's data into the provided writer.
