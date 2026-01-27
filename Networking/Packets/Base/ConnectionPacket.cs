@@ -6,13 +6,13 @@ namespace DaisNET.Networking.Packets.Base
 	/// Packet sent from server to client to establish player identity and connection information.
 	/// Contains the assigned player ID, whether this is the local player, and the IP endpoint.
 	/// </summary>
-	public class ConnectionPacket<T>() : Packet(ID_NAME)
+	public class ConnectionPacket<T>() : Packet(PACKET_ID)
 		where T : NetworkPlayer, new()
 	{
 		/// <summary>
 		/// The unique identifier for this packet type used for registration and routing.
 		/// </summary>
-		public const string ID_NAME = "connection";
+		public const string PACKET_ID = "connection";
 
 		/// <summary>
 		/// Indicates whether this connection packet is for the local player receiving it.

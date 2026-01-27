@@ -1,19 +1,19 @@
-﻿using DaisNET.Networking.Gameplay;
+﻿using DaisNET.Networking.Packets;
 using DaisNET.Networking.Serialization;
 
-namespace DaisNET.Networking.Packets.Gameplay
+namespace DaisNET.Networking.Gameplay.Packets
 {
 	/// <summary>
 	/// Packet that synchronizes an actor's transform (position, rotation, scale) across the network.
 	/// Used to keep game objects in sync between server and clients.
 	/// </summary>
-	public class TransformPacket<T>() : Packet(ID_NAME)
+	public class TransformPacket<T>() : Packet(PACKET_ID)
 		where T : NetworkPlayer, new()
 	{
 		/// <summary>
 		/// The unique identifier for this packet type used for registration and routing.
 		/// </summary>
-		public const string ID_NAME = "transform";
+		public const string PACKET_ID = "transform";
 
 		/// <summary>
 		/// The name of the actor whose transform is being synchronized.

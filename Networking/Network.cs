@@ -2,9 +2,9 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using DaisNET.Networking.Gameplay.Packets;
 using DaisNET.Networking.Packets;
 using DaisNET.Networking.Packets.Base;
-using DaisNET.Networking.Packets.Gameplay;
 
 namespace DaisNET.Networking
 {
@@ -335,7 +335,7 @@ namespace DaisNET.Networking
 			{
 				return;
 			}
-			
+
 			throw new DuplicateNameException($"Duplicate packet id '{id}'");
 		}
 
@@ -408,8 +408,9 @@ namespace DaisNET.Networking
 		/// </summary>
 		private void RegisterDefaultPackets()
 		{
-			RegisterPacket(ConnectionPacket<T>.ID_NAME, typeof(ConnectionPacket<T>));
-			RegisterPacket(TransformPacket<T>.ID_NAME, typeof(TransformPacket<T>));
+			RegisterPacket(ConnectionPacket<T>.PACKET_ID, typeof(ConnectionPacket<T>));
+			RegisterPacket(TransformPacket<T>.PACKET_ID, typeof(TransformPacket<T>));
+			RegisterPacket(VelocityStatePacket<T>.PACKET_ID, typeof(VelocityStatePacket<T>));
 		}
 	}
 }
