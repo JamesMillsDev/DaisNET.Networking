@@ -81,7 +81,7 @@ namespace DaisNET.Networking
 			{
 				foreach (Socket connection in this.connections)
 				{
-					SendPacket(packet, connection);
+					PacketProtocols.SendPacket(packet, connection);
 				}
 			}
 		}
@@ -99,7 +99,7 @@ namespace DaisNET.Networking
 			}
 
 			// Start reading packets from all connected clients simultaneously
-			List<Task<Tuple<string, byte[]>>> reading = new(connected.Select(ReadPacket));
+			List<Task<Tuple<string, byte[]>>> reading = new(connected.Select(PacketProtocols.ReadPacket));
 			await Task.WhenAll(reading.ToArray());
 
 			// Process each received packet
@@ -130,7 +130,7 @@ namespace DaisNET.Networking
 			{
 				(Socket connectedSocket, uint connectedId) = queued.Dequeue();
 
-				SendPacket(
+				PacketProtocols.SendPacket(
 					new ConnectionPacket(true, connectedId, $"{connectedSocket.RemoteEndPoint}"),
 					connectedSocket
 				);
@@ -159,13 +159,13 @@ namespace DaisNET.Networking
 					byte connectionIndex = (byte)connected.IndexOf(connection);
 
 					// Send the connection packet for the new connection to the old ones
-					SendPacket(
+					PacketProtocols.SendPacket(
 						new ConnectionPacket(false, connectedId, $"{connectedSocket.RemoteEndPoint}"),
 						connection
 					);
 
 					// Send the connection packet for the old connection to the new one
-					SendPacket(
+					PacketProtocols.SendPacket(
 						new ConnectionPacket(false, connectionIndex, $"{connection.RemoteEndPoint}"),
 						connectedSocket
 					);

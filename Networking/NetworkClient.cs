@@ -33,7 +33,7 @@ namespace DaisNET.Networking
 			}
 
 			// Read a complete packet from the server socket
-			Task<Tuple<string, byte[]>> reading = ReadPacket(this.socket);
+			Task<Tuple<string, byte[]>> reading = PacketProtocols.ReadPacket(this.socket);
 			await reading;
 
 			string id = reading.Result.Item1;
