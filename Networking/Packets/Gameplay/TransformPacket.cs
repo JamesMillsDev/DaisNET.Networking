@@ -1,4 +1,5 @@
 ﻿using DaisNET.Gameplay;
+using DaisNET.Networking.Serialization;
 
 namespace DaisNET.Networking.Packets.Gameplay
 {
@@ -17,7 +18,7 @@ namespace DaisNET.Networking.Packets.Gameplay
 		/// <summary>
 		/// The name of the actor whose transform is being synchronized.
 		/// </summary>
-		private string actorName = "";
+		private Guid actorId;
 
 		/// <summary>
 		/// The transform data (position, rotation, scale) to synchronize.
@@ -27,11 +28,11 @@ namespace DaisNET.Networking.Packets.Gameplay
 		/// <summary>
 		/// Initializes a new TransformPacket with the specified actor and transform data.
 		/// </summary>
-		/// <param name="actorName">The name of the actor to update.</param>
+		/// <param name = "actorId">The unique identifier for the actor that is being synced.</param>
 		/// <param name="transform">The transform data to apply to the actor.</param>
-		public TransformPacket(string actorName, Transform transform) : this()
+		public TransformPacket(Guid actorId, Transform transform) : this()
 		{
-			this.actorName = actorName;
+			this.actorId = actorId;
 			this.transform = transform;
 		}
 
@@ -41,7 +42,7 @@ namespace DaisNET.Networking.Packets.Gameplay
 		/// <param name="writer">The PacketWriter to write data to.</param>
 		public override void Serialize(PacketWriter writer)
 		{
-			writer.Write(this.actorName);
+			writer.Write(this.actorId, new GuidSerializer());
 			writer.Write(this.transform);
 		}
 
@@ -51,7 +52,7 @@ namespace DaisNET.Networking.Packets.Gameplay
 		/// <param name="reader">The PacketReader to read data from.</param>
 		public override void Deserialize(PacketReader reader)
 		{
-			this.actorName = reader.ReadString();
+			this.actorId = reader.ReadSerialized<Guid, GuidSerializer>();
 			this.transform = reader.ReadSerialized<Transform>();
 		}
 
@@ -74,7 +75,7 @@ namespace DaisNET.Networking.Packets.Gameplay
 			if (Network<T>.Instance.HasAuthority)
 			{
 				((NetworkServer<T>)Network<T>.Instance).BroadcastPacket(
-					new TransformPacket<T>(this.actorName, this.transform)
+					new TransformPacket<T>(this.actorId, this.transform)
 				);
 			}
 
@@ -84,12 +85,12 @@ namespace DaisNET.Networking.Packets.Gameplay
 			{
 				return Task.CompletedTask;
 			}
-			
+
 			// The target was found, so update the transform
 			target.Transform.Position = this.transform.Position;
 			target.Transform.Size = this.transform.Size;
 			target.Transform.Velocity = this.transform.Velocity;*/
-			
+
 			return Task.CompletedTask;
 		}
 	}

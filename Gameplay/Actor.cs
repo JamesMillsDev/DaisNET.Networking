@@ -2,12 +2,11 @@
 
 namespace DaisNET.Gameplay
 {
-	public class Actor<T>(string name, T player)
+	public class Actor<T>(T player)
 		where T : NetworkPlayer, new()
 	{
 		public Transform Transform { get; set; } = new();
-		public string Name { get; } = name;
-
+		public Guid Id { get; internal init; } = Guid.Empty;
 		public T Player { get; } = player;
 
 		public virtual void Init()
