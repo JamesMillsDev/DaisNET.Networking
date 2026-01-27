@@ -33,10 +33,10 @@ namespace DaisNET.Networking
 			}
 
 			// Read a complete packet from the server socket
-			Task<Tuple<string, byte[]>> reading = PacketProtocols.ReadPacket(this.socket);
+			Task<Tuple<ushort, byte[]>> reading = PacketProtocols.ReadPacket(this.socket);
 			await reading;
 
-			string id = reading.Result.Item1;
+			ushort id = reading.Result.Item1;
 
 			// Attempt to instantiate the appropriate packet type based on the received ID
 			if (TryMakePacketFor(id, out Packet? packet))

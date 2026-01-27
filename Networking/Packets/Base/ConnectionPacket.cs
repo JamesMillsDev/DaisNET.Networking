@@ -4,13 +4,8 @@
 	/// Packet sent from server to client to establish player identity and connection information.
 	/// Contains the assigned player ID, whether this is the local player, and the IP endpoint.
 	/// </summary>
-	public class ConnectionPacket() : Packet(PACKET_ID)
+	public class ConnectionPacket() : Packet
 	{
-		/// <summary>
-		/// The unique identifier for this packet type used for registration and routing.
-		/// </summary>
-		public const string PACKET_ID = "connection";
-
 		/// <summary>
 		/// Indicates whether this connection packet is for the local player receiving it.
 		/// </summary>

@@ -99,11 +99,11 @@ namespace DaisNET.Networking
 			}
 
 			// Start reading packets from all connected clients simultaneously
-			List<Task<Tuple<string, byte[]>>> reading = new(connected.Select(PacketProtocols.ReadPacket));
+			List<Task<Tuple<ushort, byte[]>>> reading = new(connected.Select(PacketProtocols.ReadPacket));
 			await Task.WhenAll(reading.ToArray());
 
 			// Process each received packet
-			foreach ((string id, byte[] payload) in reading.Select(task => task.Result))
+			foreach ((ushort id, byte[] payload) in reading.Select(task => task.Result))
 			{
 				// Skip packets with invalid or unregistered IDs
 				if (!TryMakePacketFor(id, out Packet? packet))

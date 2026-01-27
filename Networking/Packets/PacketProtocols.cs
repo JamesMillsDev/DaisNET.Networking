@@ -1,5 +1,4 @@
 ﻿using System.Net.Sockets;
-using System.Text;
 
 namespace DaisNET.Networking.Packets
 {
@@ -14,12 +13,12 @@ namespace DaisNET.Networking.Packets
 		/// <returns>A tuple containing the packet ID and payload data. Returns ("NULL", empty array) if no data is available.</returns>
 		/// <exception cref="TimeoutException">Thrown when the packet is not received within the timeout period (1 second per read operation).</exception>
 		/// <exception cref="Exception">Thrown when the client disconnects during the read operation.</exception>
-		internal static async Task<Tuple<string, byte[]>> ReadPacket(Socket target)
+		internal static async Task<Tuple<ushort, byte[]>> ReadPacket(Socket target)
 		{
 			// Check if any data is available before attempting to read
 			if (target.Available == 0)
 			{
-				return new Tuple<string, byte[]>("NULL", []);
+				return new Tuple<ushort, byte[]>(ushort.MaxValue, []);
 			}
 
 			// Stage 1: Read the 4-byte length prefix
@@ -79,8 +78,8 @@ namespace DaisNET.Networking.Packets
 			}
 
 			// Parse the packet header to extract the ID and payload
-			ReadPacketHeader(buffer, out string id, out byte[] payload);
-			return new Tuple<string, byte[]>(id, payload);
+			ReadPacketHeader(buffer, out ushort id, out byte[] payload);
+			return new Tuple<ushort, byte[]>(id, payload);
 		}
 
 		/// <summary>
@@ -117,7 +116,7 @@ namespace DaisNET.Networking.Packets
 		/// <param name="payload">Output parameter that receives the packet payload bytes.</param>
 		/// <exception cref="InvalidOperationException">Thrown when the buffer stream cannot be read.</exception>
 		/// <exception cref="ArgumentOutOfRangeException">Thrown when the ID length is negative.</exception>
-		internal static void ReadPacketHeader(byte[] buffer, out string id, out byte[] payload)
+		internal static void ReadPacketHeader(byte[] buffer, out ushort id, out byte[] payload)
 		{
 			using (MemoryStream memoryStream = new(buffer))
 			{
@@ -127,16 +126,15 @@ namespace DaisNET.Networking.Packets
 				}
 
 				// Read the length of the packet ID string
-				byte[] idLengthBytes = new byte[sizeof(int)];
-				memoryStream.ReadExactly(idLengthBytes);
+				byte[] readIdBytes = new byte[sizeof(ushort)];
+				memoryStream.ReadExactly(readIdBytes);
 
-				int idLength = BitConverter.ToInt32(idLengthBytes);
-				ArgumentOutOfRangeException.ThrowIfNegative(idLength);
+				ushort readId = BitConverter.ToUInt16(readIdBytes);
 
 				// Handle empty ID case (ID length is 0)
-				if (idLength == 0)
+				if (readId == 0)
 				{
-					id = string.Empty;
+					id = ushort.MaxValue;
 					// Everything remaining in buffer is payload
 					int payloadSize = (int)(memoryStream.Length - memoryStream.Position);
 					payload = new byte[payloadSize];
@@ -144,13 +142,9 @@ namespace DaisNET.Networking.Packets
 
 					return;
 				}
-
-				// Read the packet ID string
-				byte[] idBytes = new byte[idLength];
-				memoryStream.ReadExactly(idBytes);
-				id = Encoding.UTF8.GetString(idBytes);
-
+				
 				// Read the remaining bytes as payload
+				id = readId;
 				int remainingPayloadSize = (int)(memoryStream.Length - memoryStream.Position);
 				payload = new byte[remainingPayloadSize];
 				memoryStream.ReadExactly(payload);

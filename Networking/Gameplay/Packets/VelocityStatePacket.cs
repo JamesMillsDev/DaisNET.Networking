@@ -8,13 +8,8 @@ namespace DaisNET.Networking.Gameplay.Packets
     /// Uses a generic type parameter to specify the NetworkPlayer type for type-safe network access.
     /// Identifies actors by their unique GUID rather than by name.
     /// </summary>
-    public class VelocityStatePacket() : Packet(PACKET_ID)
+    public class VelocityStatePacket() : Packet
     {
-       /// <summary>
-       /// The unique identifier for this packet type used for registration and routing.
-       /// </summary>
-       public const string PACKET_ID = "velocity_state";
-
        /// <summary>
        /// The globally unique identifier of the actor whose velocity state is being synchronized.
        /// </summary>

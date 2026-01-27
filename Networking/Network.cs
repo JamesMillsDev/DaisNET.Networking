@@ -104,6 +104,14 @@ namespace DaisNET.Networking
 			}
 		}
 
+		internal enum InternalPackets : ushort
+		{
+			Connection = 0,
+			Transform,
+			Velocity,
+			Max = 255
+		}
+
 		/// <summary>
 		/// Gets whether this network instance has authority (true for server, false for client).
 		/// The authoritative instance is responsible for game state and validation.
@@ -140,7 +148,7 @@ namespace DaisNET.Networking
 		/// Dictionary mapping packet IDs to their corresponding packet types.
 		/// Used to instantiate the correct packet class when receiving data.
 		/// </summary>
-		private readonly ConcurrentDictionary<string, Type> registeredPackets = new();
+		private readonly ConcurrentDictionary<ushort, Type> registeredPackets = new();
 
 		/// <summary>
 		/// The type of player that will be constructed when the <see cref="MakePlayer"/> function is called.
@@ -217,8 +225,13 @@ namespace DaisNET.Networking
 		/// <param name="type">The Type of the packet class.</param>
 		/// <exception cref="DuplicateNameException">Thrown if a packet is attempted to be registered with a name that already exists.</exception>
 		/// <returns>True if the packet was successfully registered, false if a packet with this ID already exists.</returns>
-		public void RegisterPacket(string id, Type type)
+		public void RegisterPacket(ushort id, Type type)
 		{
+			if (id <= (ulong)InternalPackets.Max)
+			{
+				throw new IndexOutOfRangeException("Past id is within internal range. ID's must be 256 or greater.");
+			}
+			
 			lock (this.registeredPackets)
 			{
 				if (this.registeredPackets.TryAdd(id, type))
@@ -281,10 +294,10 @@ namespace DaisNET.Networking
 		/// <param name="id">The ID of the packet to create.</param>
 		/// <param name="packet">Output parameter that receives the created packet instance, or null if creation failed.</param>
 		/// <returns>True if a packet was successfully created, false if the ID is invalid or not registered.</returns>
-		protected bool TryMakePacketFor(string id, out Packet? packet)
+		protected bool TryMakePacketFor(ushort id, out Packet? packet)
 		{
 			// Handle special "NULL" ID returned when no data is available
-			if (id == "NULL")
+			if (id == ushort.MaxValue)
 			{
 				packet = null;
 				return false;
@@ -311,9 +324,24 @@ namespace DaisNET.Networking
 		/// </summary>
 		private void RegisterDefaultPackets()
 		{
-			RegisterPacket(ConnectionPacket.PACKET_ID, typeof(ConnectionPacket));
-			RegisterPacket(TransformPacket.PACKET_ID, typeof(TransformPacket));
-			RegisterPacket(VelocityStatePacket.PACKET_ID, typeof(VelocityStatePacket));
+			RegisterPacketInternal(0, typeof(ConnectionPacket));
+			RegisterPacketInternal(1, typeof(TransformPacket));
+			RegisterPacketInternal(2, typeof(VelocityStatePacket));
+			return;
+
+			//Special handler for default packets. This bypasses the special range
+			void RegisterPacketInternal(ushort id, Type type)
+			{
+				lock (this.registeredPackets)
+				{
+					if (this.registeredPackets.TryAdd(id, type))
+					{
+						return;
+					}
+				}
+
+				throw new DuplicateNameException($"Duplicate packet id '{id}'");
+			}
 		}
 	}
 }

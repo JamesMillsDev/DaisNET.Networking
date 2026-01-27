@@ -5,13 +5,18 @@
 	/// Packets represent discrete messages sent between client and server.
 	/// Each packet has a unique ID for identification and must implement serialization, deserialization, and processing logic.
 	/// </summary>
-	public abstract class Packet(string id)
+	public abstract class Packet
 	{
+		/// <summary>
+		/// The maximum size a single packet can be. This is to prevent DOSing.
+		/// </summary>
+		public const int MAX_PACKET_SIZE = 1048576;
+		
 		/// <summary>
 		/// Gets the unique identifier for this packet type.
 		/// Used to determine which packet class to instantiate when receiving data.
 		/// </summary>
-		public string ID { get; } = id;
+		public ulong ID { get; internal set; }
 
 		/// <summary>
 		/// Serializes this packet's data into the provided writer.

@@ -9,12 +9,22 @@ namespace DaisNET.Networking.Packets
 	/// Used to deserialize packet payloads received over the network.
 	/// All read operations check if the stream is readable before attempting to read.
 	/// </summary>
-	public class PacketReader(byte[] buffer)
+	public class PacketReader
 	{
 		/// <summary>
 		/// The memory buffer that the reader is pulling from.
 		/// </summary>
-		private readonly MemoryStream stream = new(buffer);
+		private readonly MemoryStream stream;
+
+		public PacketReader(byte[] buffer)
+		{
+			if (buffer.Length >= Packet.MAX_PACKET_SIZE)
+			{
+				throw new InvalidOperationException("Packet size exceeds maximum packet size.");
+			}
+			
+			this.stream = new MemoryStream(buffer);
+		}
 
 		/// <summary>
 		/// Reads a boolean value from the stream.
