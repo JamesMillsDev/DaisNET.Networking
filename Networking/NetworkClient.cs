@@ -49,6 +49,12 @@ namespace DaisNET.Networking
 				await packet.Process();
 			}
 
+			// Sync the actor list across the network
+			lock (this.Actors)
+			{
+				this.Actors.NetworkSync();
+			}
+
 			// Wait for the configured poll interval before checking for more packets
 			await Task.Delay(this.pollRate);
 		}

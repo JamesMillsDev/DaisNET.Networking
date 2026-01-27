@@ -1,6 +1,7 @@
 ﻿# DaisNET.Networking
 
-A lightweight TCP socket networking library for C# with built-in message framing and packet serialization.
+A lightweight TCP socket networking library for C# with built-in message framing and packet serialization designed for
+Game Development.
 
 ## Contents
 
@@ -118,6 +119,7 @@ DaisNET.Networking solves TCP's stream-based nature by using length-prefixed fra
 ```
 
 This ensures packets are read completely and correctly, even when:
+
 - Multiple packets arrive in a single TCP segment
 - A single packet is split across multiple TCP segments
 - Network latency causes irregular data arrival
@@ -125,6 +127,7 @@ This ensures packets are read completely and correctly, even when:
 ### Packet System
 
 All packets inherit from the `Packet` base class and must implement:
+
 - `Serialize()` - Write packet data to a PacketWriter
 - `Deserialize()` - Read packet data from a PacketReader
 - `Process()` - Handle the packet when received
@@ -134,6 +137,7 @@ Packets are automatically routed and instantiated based on their registered ID.
 ### Supported Data Types
 
 PacketReader and PacketWriter support:
+
 - Primitives: `bool`, `byte`, `char`, `short`, `int`, `long`, `float`, `double`
 - Unsigned: `ushort`, `uint`, `ulong`
 - Strings (UTF-8 encoded with length prefix)
@@ -173,7 +177,8 @@ public class PlayerData : IPacketSerializable
 
 ### Connection Timeout
 
-Each receive operation has a 1-second timeout by default. This prevents indefinite blocking when clients disconnect unexpectedly.
+Each receive operation has a 1-second timeout by default. This prevents indefinite blocking when clients disconnect
+unexpectedly.
 
 ## Best Practices
 
@@ -196,7 +201,9 @@ Each receive operation has a 1-second timeout by default. This prevents indefini
 
 ## Examples
 
-See the '[PongNetworked](https://github.com/JamesMillsDev/PongNetworked)' directory for complete working examples including:
+See the '[PongNetworked](https://github.com/JamesMillsDev/PongNetworked)' directory for complete working examples
+including:
+
 - Simple echo server/client
 - Multiplayer game state synchronization
 - Chat application

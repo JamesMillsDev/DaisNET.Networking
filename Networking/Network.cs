@@ -2,7 +2,9 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using DaisNET.Gameplay;
 using DaisNET.Networking.Packets;
+using DaisNET.Networking.Packets.Gameplay;
 
 namespace DaisNET.Networking
 {
@@ -255,6 +257,8 @@ namespace DaisNET.Networking
 		/// The authoritative instance is responsible for game state and validation.
 		/// </summary>
 		public bool HasAuthority { get; protected init; }
+		
+		public ActorList<T> Actors { get; } = [];
 
 		/// <summary>
 		/// The list of connected players which is automatically filled by <see cref="ConnectionPacket"/>.
@@ -407,6 +411,7 @@ namespace DaisNET.Networking
 		private void RegisterDefaultPackets()
 		{
 			RegisterPacket(ConnectionPacket<T>.ID_NAME, typeof(ConnectionPacket<T>));
+			RegisterPacket(TransformPacket<T>.ID_NAME, typeof(TransformPacket<T>));
 		}
 	}
 }
