@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using System.Runtime.InteropServices;
 using DaisNET.Networking.Serialization;
+using DaisNET.Networking.Serialization.Serializers;
 using DaisNET.Utility.Extensions;
 
 namespace DaisNET.Networking.Gameplay

@@ -1,5 +1,5 @@
 ﻿using DaisNET.Networking.Packets;
-using DaisNET.Networking.Serialization;
+using DaisNET.Networking.Serialization.Serializers;
 
 namespace DaisNET.Networking.Gameplay.Packets
 {

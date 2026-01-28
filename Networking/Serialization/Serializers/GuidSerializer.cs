@@ -1,4 +1,4 @@
-﻿namespace DaisNET.Networking.Serialization
+﻿namespace DaisNET.Networking.Serialization.Serializers
 {
 	public class GuidSerializer : Serializer<Guid>
 	{

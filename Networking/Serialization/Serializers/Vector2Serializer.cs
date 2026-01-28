@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using DaisNET.Utility.Extensions;
 
-namespace DaisNET.Networking.Serialization
+namespace DaisNET.Networking.Serialization.Serializers
 {
 	public class Vector2Serializer : Serializer<Vector2>
 	{
