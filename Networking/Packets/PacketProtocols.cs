@@ -2,7 +2,9 @@
 
 namespace DaisNET.Networking.Packets
 {
-	public static class PacketProtocols
+	internal record PacketPayload(ushort Id, byte[] Payload);
+	
+	internal static class PacketProtocols
 	{
 		/// <summary>
 		/// Reads a complete packet from the specified socket with timeout protection.
@@ -10,15 +12,16 @@ namespace DaisNET.Networking.Packets
 		/// Each receive operation has a 1-second timeout to prevent indefinite blocking.
 		/// </summary>
 		/// <param name="target">The socket to read from.</param>
+		/// <param name="token">The </param>
 		/// <returns>A tuple containing the packet ID and payload data. Returns ("NULL", empty array) if no data is available.</returns>
 		/// <exception cref="TimeoutException">Thrown when the packet is not received within the timeout period (1 second per read operation).</exception>
 		/// <exception cref="Exception">Thrown when the client disconnects during the read operation.</exception>
-		internal static async Task<Tuple<ushort, byte[]>> ReadPacket(Socket target)
+		internal static async Task<PacketPayload> ReadPacket(Socket target, CancellationToken token)
 		{
 			// Check if any data is available before attempting to read
 			if (target.Available == 0)
 			{
-				return new Tuple<ushort, byte[]>(ushort.MaxValue, []);
+				return new PacketPayload(ushort.MaxValue, []);
 			}
 
 			// Stage 1: Read the 4-byte length prefix
@@ -27,17 +30,14 @@ namespace DaisNET.Networking.Packets
 			int totalRead = 0;
 			while (totalRead < sizeof(int))
 			{
-				ValueTask<int> receiveValueTask = target.ReceiveAsync(lengthBuffer.AsMemory(totalRead));
-				Task<int> receiveTask = receiveValueTask.AsTask();
-				Task completedTask = await Task.WhenAny(receiveTask, Task.Delay(1000));
+				ValueTask<int> receiveValueTask = target.ReceiveAsync(lengthBuffer.AsMemory(totalRead), token);
+				int bytesRead = await receiveValueTask.AsTask();
 
 				// Check if the receive operation timed out
-				if (completedTask != receiveTask)
+				if (receiveValueTask.IsCanceled)
 				{
 					throw new TimeoutException("Failed to read packet in time!");
 				}
-
-				int bytesRead = receiveTask.Result;
 
 				// Check if the client disconnected (0 bytes read indicates disconnection)
 				if (bytesRead == 0)
@@ -56,17 +56,14 @@ namespace DaisNET.Networking.Packets
 			totalRead = 0;
 			while (totalRead < packetLength)
 			{
-				ValueTask<int> receiveValueTask = target.ReceiveAsync(buffer.AsMemory(totalRead));
-				Task<int> receiveTask = receiveValueTask.AsTask();
-				Task completedTask = await Task.WhenAny(receiveTask, Task.Delay(1000));
+				ValueTask<int> receiveValueTask = target.ReceiveAsync(buffer.AsMemory(totalRead), token);
+				int bytesRead = await receiveValueTask.AsTask();
 
 				// Check if the receive operation timed out
-				if (completedTask != receiveTask)
+				if (receiveValueTask.IsCanceled)
 				{
 					throw new TimeoutException("Failed to read packet in time!");
 				}
-
-				int bytesRead = receiveTask.Result;
 
 				// Check if the client disconnected (0 bytes read indicates disconnection)
 				if (bytesRead == 0)
@@ -79,7 +76,7 @@ namespace DaisNET.Networking.Packets
 
 			// Parse the packet header to extract the ID and payload
 			ReadPacketHeader(buffer, out ushort id, out byte[] payload);
-			return new Tuple<ushort, byte[]>(id, payload);
+			return new PacketPayload(id, payload);
 		}
 
 		/// <summary>
@@ -116,7 +113,7 @@ namespace DaisNET.Networking.Packets
 		/// <param name="payload">Output parameter that receives the packet payload bytes.</param>
 		/// <exception cref="InvalidOperationException">Thrown when the buffer stream cannot be read.</exception>
 		/// <exception cref="ArgumentOutOfRangeException">Thrown when the ID length is negative.</exception>
-		internal static void ReadPacketHeader(byte[] buffer, out ushort id, out byte[] payload)
+		private static void ReadPacketHeader(byte[] buffer, out ushort id, out byte[] payload)
 		{
 			using (MemoryStream memoryStream = new(buffer))
 			{

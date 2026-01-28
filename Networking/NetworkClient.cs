@@ -33,20 +33,23 @@ namespace DaisNET.Networking
 			}
 
 			// Read a complete packet from the server socket
-			Task<Tuple<ushort, byte[]>> reading = PacketProtocols.ReadPacket(this.socket);
-			await reading;
-
-			ushort id = reading.Result.Item1;
-
-			// Attempt to instantiate the appropriate packet type based on the received ID
-			if (TryMakePacketFor(id, out Packet? packet))
+			using (CancellationTokenSource cts = new(connectionTimeout))
 			{
-				// Deserialize the packet payload and process it
-				byte[] payload = reading.Result.Item2;
-				PacketReader reader = new(payload);
+				Task<PacketPayload> reading = PacketProtocols.ReadPacket(this.socket, cts.Token);
+				await reading;
 
-				packet!.Deserialize(reader);
-				await packet.Process();
+				ushort id = reading.Result.Id;
+
+				// Attempt to instantiate the appropriate packet type based on the received ID
+				if (TryMakePacketFor(id, out Packet? packet))
+				{
+					// Deserialize the packet payload and process it
+					byte[] payload = reading.Result.Payload;
+					PacketReader reader = new(payload);
+
+					packet!.Deserialize(reader);
+					await packet.Process();
+				}
 			}
 
 			// Wait for the configured poll interval before checking for more packets

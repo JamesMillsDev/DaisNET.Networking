@@ -106,7 +106,7 @@ namespace DaisNET.Networking
 
 		internal enum InternalPackets : ushort
 		{
-			Connection = 0,
+			Connection,
 			Transform,
 			Velocity,
 			Max = 255
@@ -117,6 +117,12 @@ namespace DaisNET.Networking
 		/// The authoritative instance is responsible for game state and validation.
 		/// </summary>
 		public bool HasAuthority { get; protected init; }
+		
+		/// <summary>
+		/// How long the socket should attempt to receive any packets in milliseconds.
+		/// default: 100ms
+		/// </summary>
+		public int packetReadTimeout = 100;
 
 		/// <summary>
 		/// The list of connected players which is automatically filled by <see cref="ConnectionPacket"/>.
@@ -324,17 +330,17 @@ namespace DaisNET.Networking
 		/// </summary>
 		private void RegisterDefaultPackets()
 		{
-			RegisterPacketInternal(0, typeof(ConnectionPacket));
-			RegisterPacketInternal(1, typeof(TransformPacket));
-			RegisterPacketInternal(2, typeof(VelocityStatePacket));
+			RegisterPacketInternal(InternalPackets.Connection, typeof(ConnectionPacket));
+			RegisterPacketInternal(InternalPackets.Transform, typeof(TransformPacket));
+			RegisterPacketInternal(InternalPackets.Velocity, typeof(VelocityStatePacket));
 			return;
 
 			//Special handler for default packets. This bypasses the special range
-			void RegisterPacketInternal(ushort id, Type type)
+			void RegisterPacketInternal(InternalPackets id, Type type)
 			{
 				lock (this.registeredPackets)
 				{
-					if (this.registeredPackets.TryAdd(id, type))
+					if (this.registeredPackets.TryAdd((ushort)id, type))
 					{
 						return;
 					}

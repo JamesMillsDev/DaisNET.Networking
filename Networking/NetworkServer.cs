@@ -107,22 +107,33 @@ namespace DaisNET.Networking
 			}
 
 			// Start reading packets from all connected clients simultaneously
-			List<Task<Tuple<ushort, byte[]>>> reading = new(connected.Select(PacketProtocols.ReadPacket));
-			await Task.WhenAll(reading.ToArray());
-
-			// Process each received packet
-			foreach ((ushort id, byte[] payload) in reading.Select(task => task.Result))
+			using (CancellationTokenSource cts = new(this.packetReadTimeout))
 			{
-				// Skip packets with invalid or unregistered IDs
-				if (!TryMakePacketFor(id, out Packet? packet))
-				{
-					continue;
-				}
+				List<Task<PacketPayload>> reading =
+					new(connected.Select(con => PacketProtocols.ReadPacket(con, cts.Token)));
 
-				// Deserialize the packet payload and process it
-				PacketReader reader = new(payload);
-				packet!.Deserialize(reader);
-				await packet.Process();
+				try
+				{
+					await Task.WhenAll(reading.ToArray());
+
+					// Process each received packet
+					foreach ((ushort id, byte[] payload) in reading.Select(task => task.Result))
+					{
+						// Skip packets with invalid or unregistered IDs
+						if (!TryMakePacketFor(id, out Packet? packet))
+						{
+							continue;
+						}
+
+						// Deserialize the packet payload and process it
+						PacketReader reader = new(payload);
+						packet!.Deserialize(reader);
+						await packet.Process();
+					}
+				}
+				catch (OperationCanceledException)
+				{
+				}
 			}
 
 			// Copy the queue clearing the original.
