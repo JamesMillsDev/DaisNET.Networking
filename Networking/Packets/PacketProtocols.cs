@@ -85,12 +85,13 @@ namespace DaisNET.Networking.Packets
 		/// The packet is sent with a 4-byte length prefix followed by the serialized packet data.
 		/// Packet format: [totalLength (4 bytes)][idLength (4 bytes)][id (variable)][payload (variable)]
 		/// </summary>
+		/// <param name="id">The unique identifier for the packet to be sent.</param>
 		/// <param name="packet">The packet to serialize and send.</param>
 		/// <param name="target">The socket to send the packet to.</param>
-		internal static void SendPacket(Packet packet, Socket target)
+		internal static void SendPacket(ushort id, Packet packet, Socket target)
 		{
 			// Serialize the packet (ID + payload data)
-			using (PacketWriter writer = new(packet.ID))
+			using (PacketWriter writer = new(id))
 			{
 				packet.Serialize(writer);
 

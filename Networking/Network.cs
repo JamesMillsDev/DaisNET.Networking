@@ -2,6 +2,7 @@
 using System.Data;
 using System.Net;
 using System.Net.Sockets;
+using DaisNET.Networking.Gameplay;
 using DaisNET.Networking.Gameplay.Packets;
 using DaisNET.Networking.Packets;
 using DaisNET.Networking.Packets.Base;
@@ -106,11 +107,15 @@ namespace DaisNET.Networking
 
 		internal enum InternalPackets : ushort
 		{
+			None,
 			Connection,
 			Transform,
 			Velocity,
+			SpawnActor,
 			Max = 255
 		}
+
+		public ActorWorld World { get; } = new();
 
 		/// <summary>
 		/// Gets whether this network instance has authority (true for server, false for client).
@@ -185,11 +190,6 @@ namespace DaisNET.Networking
 				throw new NullReferenceException("Network player type is null!");
 			}
 
-			if (!this.networkPlayerType.IsSubclassOf(typeof(NetworkPlayer)))
-			{
-				throw new InvalidCastException($"{this.networkPlayerType.Name} is not a NetworkPlayer!");
-			}
-
 			if (!this.networkPlayerType.IsAssignableTo(typeof(T)))
 			{
 				throw new InvalidCastException($"{typeof(T).Name} is not a NetworkPlayer!");
@@ -210,8 +210,9 @@ namespace DaisNET.Networking
 		/// Sends a packet through this network instance's socket.
 		/// No-op if the socket is not initialized.
 		/// </summary>
+		/// <param name="id">The unique identifier for the packet being sent</param>
 		/// <param name="packet">The packet to serialize and send.</param>
-		public void SendPacket(Packet packet)
+		public void SendPacket(ushort id, Packet packet)
 		{
 			if (this.socket == null)
 			{
@@ -220,14 +221,14 @@ namespace DaisNET.Networking
 
 			lock (this.socket)
 			{
-				PacketProtocols.SendPacket(packet, this.socket);
+				PacketProtocols.SendPacket(id, packet, this.socket);
 			}
 		}
 
 		/// <summary>
 		/// Registers a packet type so it can be instantiated when received over the network.
 		/// </summary>
-		/// <param name="id">The unique ID for the packet. Must match <see cref="Packet.ID"/>.</param>
+		/// <param name="id">The unique ID for the packet.</param>
 		/// <param name="type">The Type of the packet class.</param>
 		/// <exception cref="DuplicateNameException">Thrown if a packet is attempted to be registered with a name that already exists.</exception>
 		/// <returns>True if the packet was successfully registered, false if a packet with this ID already exists.</returns>
@@ -254,7 +255,7 @@ namespace DaisNET.Networking
 		/// </summary>
 		/// <param name="id">The id of the player attempting to be found.</param>
 		/// <returns>A Player reference if found, null if id is not in use.</returns>
-		public T? FindPlayer<T>(byte id) where T : NetworkPlayer =>
+		public T? FindPlayer<T>(uint id) where T : NetworkPlayer =>
 			(T?)this.players.FirstOrDefault(player => player.Connection.ID == id);
 
 		/// <summary>
@@ -333,6 +334,7 @@ namespace DaisNET.Networking
 			RegisterPacketInternal(InternalPackets.Connection, typeof(ConnectionPacket));
 			RegisterPacketInternal(InternalPackets.Transform, typeof(TransformPacket));
 			RegisterPacketInternal(InternalPackets.Velocity, typeof(VelocityStatePacket));
+			RegisterPacketInternal(InternalPackets.SpawnActor, typeof(ActorSpawnPacket));
 			return;
 
 			//Special handler for default packets. This bypasses the special range

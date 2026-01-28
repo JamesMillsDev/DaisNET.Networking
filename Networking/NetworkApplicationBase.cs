@@ -1,4 +1,5 @@
-﻿using DaisNET.Utility;
+﻿using DaisNET.Networking.Gameplay;
+using DaisNET.Utility;
 
 namespace DaisNET.Networking
 {
@@ -24,6 +25,11 @@ namespace DaisNET.Networking
 
 			while (!ShouldClose())
 			{
+				foreach ((Guid _, Actor actor) in Network.Instance.World)
+				{
+					actor.Tick(GetFrameTime());
+				}
+				
 				Tick(Network.Instance);
 			}
 
@@ -36,5 +42,6 @@ namespace DaisNET.Networking
 		protected abstract void Initialise(Network network);
 		protected abstract void Tick(Network network);
 		protected abstract void Shutdown(Network network);
+		protected abstract float GetFrameTime();
 	}
 }

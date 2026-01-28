@@ -1,4 +1,6 @@
-﻿namespace DaisNET.Networking
+﻿using DaisNET.Networking.Gameplay;
+
+namespace DaisNET.Networking
 {
 	public class NetworkPlayer(NetworkConnection connection, bool isLocalPlayer)
 	{
@@ -11,6 +13,11 @@
 		}
 
 		public virtual void OnClientDisconnected()
+		{
+			
+		}
+
+		public virtual void OnOwnedActorSpawned(Actor actor)
 		{
 			
 		}

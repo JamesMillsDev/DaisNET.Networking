@@ -69,6 +69,7 @@ namespace DaisNET.Networking.Gameplay.Packets
 			if (Network.Instance.HasAuthority)
 			{
 				((NetworkServer)Network.Instance).BroadcastPacket(
+					(ushort)Network.InternalPackets.Connection,
 					new TransformPacket(this.actorId, this.transform)
 				);
 			}

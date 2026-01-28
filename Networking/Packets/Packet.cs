@@ -11,12 +11,6 @@
 		/// The maximum size a single packet can be. This is to prevent DOSing.
 		/// </summary>
 		public const int MAX_PACKET_SIZE = 1048576;
-		
-		/// <summary>
-		/// Gets the unique identifier for this packet type.
-		/// Used to determine which packet class to instantiate when receiving data.
-		/// </summary>
-		public ushort ID { get; internal set; }
 
 		/// <summary>
 		/// Serializes this packet's data into the provided writer.

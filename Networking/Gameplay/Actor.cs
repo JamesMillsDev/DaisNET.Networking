@@ -34,7 +34,7 @@
        /// </summary>
        /// <param name="player">The network player that owns this actor.</param>
        /// <param name="id">The unique identifier for this actor.</param>
-       internal Actor(NetworkPlayer player, Guid id)
+       protected Actor(NetworkPlayer player, Guid id)
        {
           this.Id = id;
           this.player = player;
@@ -45,7 +45,7 @@
        /// </summary>
        /// <typeparam name="T">The specific NetworkPlayer type to cast to.</typeparam>
        /// <returns>The owning network player cast to type T.</returns>
-       public T GetNetworkPlayer<T>() where T : NetworkPlayer, new()
+       public T GetNetworkPlayer<T>() where T : NetworkPlayer
        {
           return (this.player as T)!;
        }

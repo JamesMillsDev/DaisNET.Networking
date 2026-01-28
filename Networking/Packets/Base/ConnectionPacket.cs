@@ -84,8 +84,8 @@
 				}
 
 				// Notify that the client has connected and add to the players list
-				player.OnClientConnected();
 				Network.Instance.players.Add(player);
+				player.OnClientConnected();
 			}
 
 			return Task.CompletedTask;

@@ -75,8 +75,9 @@ namespace DaisNET.Networking
 		/// Sends a packet to all connected clients.
 		/// Thread-safe operation that broadcasts the same packet to every client in the connections list.
 		/// </summary>
+		/// <param name="id">The unique identifier for the packet being sent.</param>
 		/// <param name="packet">The packet to serialize and broadcast to all clients.</param>
-		public void BroadcastPacket(Packet packet)
+		public void BroadcastPacket(ushort id, Packet packet)
 		{
 			List<Socket> currentConnections = [];
 			lock (this.connections)
@@ -89,7 +90,7 @@ namespace DaisNET.Networking
 			{
 				lock (connection)
 				{
-					PacketProtocols.SendPacket(packet, connection);
+					PacketProtocols.SendPacket(id, packet, connection);
 				}
 			}
 		}
@@ -152,6 +153,7 @@ namespace DaisNET.Networking
 				lock (connectedSocket)
 				{
 					PacketProtocols.SendPacket(
+						(ushort)InternalPackets.Connection,
 						new ConnectionPacket(true, connectedId, $"{connectedSocket.RemoteEndPoint}"),
 						connectedSocket
 					);
@@ -184,6 +186,7 @@ namespace DaisNET.Networking
 					{
 						// Send the connection packet for the new connection to the old ones
 						PacketProtocols.SendPacket(
+							(ushort)InternalPackets.Connection,
 							new ConnectionPacket(false, connectedId, $"{connectedSocket.RemoteEndPoint}"),
 							connection
 						);
@@ -193,6 +196,7 @@ namespace DaisNET.Networking
 					{
 						// Send the connection packet for the old connection to the new one
 						PacketProtocols.SendPacket(
+							(ushort)InternalPackets.Connection,
 							new ConnectionPacket(false, connectionIndex, $"{connection.RemoteEndPoint}"),
 							connectedSocket
 						);
