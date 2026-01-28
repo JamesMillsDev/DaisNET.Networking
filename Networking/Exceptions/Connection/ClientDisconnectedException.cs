@@ -2,6 +2,12 @@
 {
 	public class ClientDisconnectedException : Exception
 	{
+		public ClientDisconnectedException()
+			: base("Client disconnected")
+		{
+			
+		}
+		
 		public ClientDisconnectedException(string? message)
 			: base(message ?? "Client disconnected.")
 		{

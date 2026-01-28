@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Buffers.Binary;
+using System.Text;
 using DaisNET.Networking.Serialization;
 
 namespace DaisNET.Networking.Packets
@@ -7,6 +8,7 @@ namespace DaisNET.Networking.Packets
 	/// Provides methods for serializing data into a byte stream for network transmission.
 	/// Used to construct packet payloads that will be sent over the network.
 	/// Automatically writes the packet ID on construction and supports various primitive types and custom serializable objects.
+	/// All numeric types are serialized in little-endian byte order for consistency across platforms.
 	/// </summary>
 	public class PacketWriter : IDisposable, IAsyncDisposable
 	{
@@ -14,6 +16,7 @@ namespace DaisNET.Networking.Packets
 		/// Serializes an object into a byte array based on its type.
 		/// Supports primitive types (int, bool, float, etc.), strings, and custom <see cref="IPacketSerializable"/> objects.
 		/// Strings are serialized with a 4-byte length prefix followed by UTF-8 encoded bytes.
+		/// All numeric types are serialized in little-endian format.
 		/// </summary>
 		/// <param name="data">The object to serialize. Cannot be null.</param>
 		/// <returns>A byte array containing the serialized data.</returns>
@@ -27,52 +30,52 @@ namespace DaisNET.Networking.Packets
 
 			if (type == typeof(int))
 			{
-				return BitConverter.GetBytes((int)data);
+				return SerializeInt32((int)data);
 			}
 
 			if (type == typeof(double))
 			{
-				return BitConverter.GetBytes((double)data);
+				return SerializeDouble((double)data);
 			}
 
 			if (type == typeof(bool))
 			{
-				return BitConverter.GetBytes((bool)data);
+				return SerializeBoolean((bool)data);
 			}
 
 			if (type == typeof(char))
 			{
-				return BitConverter.GetBytes((char)data);
+				return SerializeChar((char)data);
 			}
 
 			if (type == typeof(short))
 			{
-				return BitConverter.GetBytes((short)data);
+				return SerializeInt16((short)data);
 			}
 
 			if (type == typeof(long))
 			{
-				return BitConverter.GetBytes((long)data);
+				return SerializeInt64((long)data);
 			}
 
 			if (type == typeof(float))
 			{
-				return BitConverter.GetBytes((float)data);
+				return SerializeSingle((float)data);
 			}
 
 			if (type == typeof(ushort))
 			{
-				return BitConverter.GetBytes((ushort)data);
+				return SerializeUInt16((ushort)data);
 			}
 
 			if (type == typeof(uint))
 			{
-				return BitConverter.GetBytes((uint)data);
+				return SerializeUInt32((uint)data);
 			}
 
 			if (type == typeof(ulong))
 			{
-				return BitConverter.GetBytes((ulong)data);
+				return SerializeUInt64((ulong)data);
 			}
 
 			if (type == typeof(byte))
@@ -80,29 +83,161 @@ namespace DaisNET.Networking.Packets
 				return [(byte)data];
 			}
 
-			if (type != typeof(string))
+			if (type == typeof(string))
 			{
-				return typeof(IPacketSerializable).IsAssignableFrom(type)
-					? ((IPacketSerializable)data).Serialize()
-					: throw new NotSupportedException($"Type {type} is not supported.");
+				return SerializeString((string)data);
 			}
 
-			// Serialize string with length prefix
-			byte[] bytes = Encoding.UTF8.GetBytes((string)data);
-			byte[] serialized = new byte[bytes.Length + sizeof(int)];
-			Array.Copy(BitConverter.GetBytes(bytes.Length), serialized, sizeof(int));
-			Array.Copy(bytes, 0, serialized, sizeof(int), bytes.Length);
-
-			return serialized;
+			return typeof(IPacketSerializable).IsAssignableFrom(type)
+				? ((IPacketSerializable)data).Serialize()
+				: throw new NotSupportedException($"Type {type} is not supported for serialization.");
 		}
 
 		/// <summary>
-		/// The memory buffer that the writer is streaming into.
+		/// Serializes a boolean value as a single byte (1 for true, 0 for false).
+		/// </summary>
+		/// <param name="value">The boolean value to serialize.</param>
+		/// <returns>A single-byte array containing 1 or 0.</returns>
+		private static byte[] SerializeBoolean(bool value)
+		{
+			return [value ? (byte)1 : (byte)0];
+		}
+
+		/// <summary>
+		/// Serializes a 16-bit signed integer in little-endian format.
+		/// </summary>
+		/// <param name="value">The short value to serialize.</param>
+		/// <returns>A 2-byte array containing the little-endian representation.</returns>
+		private static byte[] SerializeInt16(short value)
+		{
+			byte[] buffer = new byte[sizeof(short)];
+			BinaryPrimitives.WriteInt16LittleEndian(buffer, value);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Serializes a 16-bit unsigned integer in little-endian format.
+		/// </summary>
+		/// <param name="value">The ushort value to serialize.</param>
+		/// <returns>A 2-byte array containing the little-endian representation.</returns>
+		private static byte[] SerializeUInt16(ushort value)
+		{
+			byte[] buffer = new byte[sizeof(ushort)];
+			BinaryPrimitives.WriteUInt16LittleEndian(buffer, value);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Serializes a 32-bit signed integer in little-endian format.
+		/// </summary>
+		/// <param name="value">The int value to serialize.</param>
+		/// <returns>A 4-byte array containing the little-endian representation.</returns>
+		private static byte[] SerializeInt32(int value)
+		{
+			byte[] buffer = new byte[sizeof(int)];
+			BinaryPrimitives.WriteInt32LittleEndian(buffer, value);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Serializes a 32-bit unsigned integer in little-endian format.
+		/// </summary>
+		/// <param name="value">The uint value to serialize.</param>
+		/// <returns>A 4-byte array containing the little-endian representation.</returns>
+		private static byte[] SerializeUInt32(uint value)
+		{
+			byte[] buffer = new byte[sizeof(uint)];
+			BinaryPrimitives.WriteUInt32LittleEndian(buffer, value);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Serializes a 64-bit signed integer in little-endian format.
+		/// </summary>
+		/// <param name="value">The long value to serialize.</param>
+		/// <returns>An 8-byte array containing the little-endian representation.</returns>
+		private static byte[] SerializeInt64(long value)
+		{
+			byte[] buffer = new byte[sizeof(long)];
+			BinaryPrimitives.WriteInt64LittleEndian(buffer, value);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Serializes a 64-bit unsigned integer in little-endian format.
+		/// </summary>
+		/// <param name="value">The ulong value to serialize.</param>
+		/// <returns>An 8-byte array containing the little-endian representation.</returns>
+		private static byte[] SerializeUInt64(ulong value)
+		{
+			byte[] buffer = new byte[sizeof(ulong)];
+			BinaryPrimitives.WriteUInt64LittleEndian(buffer, value);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Serializes a single-precision floating point number in little-endian format.
+		/// </summary>
+		/// <param name="value">The float value to serialize.</param>
+		/// <returns>A 4-byte array containing the little-endian representation.</returns>
+		private static byte[] SerializeSingle(float value)
+		{
+			byte[] buffer = new byte[sizeof(float)];
+			BinaryPrimitives.WriteSingleLittleEndian(buffer, value);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Serializes a double-precision floating point number in little-endian format.
+		/// </summary>
+		/// <param name="value">The double value to serialize.</param>
+		/// <returns>An 8-byte array containing the little-endian representation.</returns>
+		private static byte[] SerializeDouble(double value)
+		{
+			byte[] buffer = new byte[sizeof(double)];
+			BinaryPrimitives.WriteDoubleLittleEndian(buffer, value);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Serializes a character as a 16-bit unsigned integer in little-endian format.
+		/// </summary>
+		/// <param name="value">The char value to serialize.</param>
+		/// <returns>A 2-byte array containing the little-endian representation.</returns>
+		private static byte[] SerializeChar(char value)
+		{
+			byte[] buffer = new byte[sizeof(char)];
+			BinaryPrimitives.WriteUInt16LittleEndian(buffer, value);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Serializes a string with a 4-byte little-endian length prefix followed by UTF-8 encoded bytes.
+		/// </summary>
+		/// <param name="value">The string value to serialize.</param>
+		/// <returns>A byte array containing the length prefix and UTF-8 string data.</returns>
+		private static byte[] SerializeString(string value)
+		{
+			byte[] stringBytes = Encoding.UTF8.GetBytes(value);
+			byte[] buffer = new byte[sizeof(int) + stringBytes.Length];
+
+			// Write length prefix in little-endian
+			BinaryPrimitives.WriteInt32LittleEndian(buffer, stringBytes.Length);
+
+			// Copy string bytes
+			Array.Copy(stringBytes, 0, buffer, sizeof(int), stringBytes.Length);
+
+			return buffer;
+		}
+
+		/// <summary>
+		/// The memory stream that accumulates the serialized packet data.
 		/// </summary>
 		private readonly MemoryStream stream;
 
 		/// <summary>
 		/// Initializes a new PacketWriter and automatically writes the packet ID to the stream.
+		/// Sets the stream capacity to the maximum packet size.
 		/// </summary>
 		/// <param name="id">The unique identifier for this packet type.</param>
 		public PacketWriter(ushort id)
@@ -113,7 +248,7 @@ namespace DaisNET.Networking.Packets
 		}
 
 		/// <summary>
-		/// Writes serialized data to the internal stream.
+		/// Writes serialized data to the internal stream using the default serialization logic.
 		/// No-op if the stream is not writable.
 		/// </summary>
 		/// <param name="data">The object to serialize and write.</param>
@@ -128,10 +263,13 @@ namespace DaisNET.Networking.Packets
 		}
 
 		/// <summary>
-		/// Writes the passed data into the internal stream using an implementation of <see cref="Serializer{T}"/>.
+		/// Writes data to the internal stream using a custom serializer implementation.
+		/// Allows for type-specific serialization logic beyond the default primitive type handling.
+		/// No-op if the stream is not writable.
 		/// </summary>
+		/// <typeparam name="T">The type of data to serialize. Must have a parameterless constructor.</typeparam>
 		/// <param name="data">The data to serialize into the memory stream.</param>
-		/// <param name="serializer">The serializer implementation for the passed object.</param>
+		/// <param name="serializer">The custom serializer implementation for the passed object.</param>
 		public void Write<T>(T data, Serializer<T> serializer) where T : new()
 		{
 			if (!this.stream.CanWrite)
@@ -150,7 +288,7 @@ namespace DaisNET.Networking.Packets
 		public byte[] GetBytes() => this.stream.ToArray();
 
 		/// <summary>
-		/// Disposes of the internal memory stream and suppresses finalization.
+		/// Disposes of the internal memory stream and releases resources.
 		/// </summary>
 		public void Dispose()
 		{
@@ -158,7 +296,7 @@ namespace DaisNET.Networking.Packets
 		}
 
 		/// <summary>
-		/// Asynchronously disposes of the internal memory stream and suppresses finalization.
+		/// Asynchronously disposes of the internal memory stream and releases resources.
 		/// </summary>
 		public async ValueTask DisposeAsync()
 		{

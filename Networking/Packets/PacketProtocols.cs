@@ -1,4 +1,5 @@
 ﻿using System.Net.Sockets;
+using DaisNET.Networking.Exceptions.Connection;
 
 namespace DaisNET.Networking.Packets
 {
@@ -42,7 +43,7 @@ namespace DaisNET.Networking.Packets
 				// Check if the client disconnected (0 bytes read indicates disconnection)
 				if (bytesRead == 0)
 				{
-					throw new Exception("Client disconnected");
+					throw new ClientDisconnectedException();
 				}
 
 				totalRead += bytesRead;
@@ -68,7 +69,7 @@ namespace DaisNET.Networking.Packets
 				// Check if the client disconnected (0 bytes read indicates disconnection)
 				if (bytesRead == 0)
 				{
-					throw new Exception("Client disconnected");
+					throw new ClientDisconnectedException();
 				}
 
 				totalRead += bytesRead;
